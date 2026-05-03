@@ -2,7 +2,6 @@ from dataclasses import dataclass, field
 from typing import Optional
 from models.item import Item
 from models.dnd_class import Class
-from google import genai
 
 
 @dataclass
