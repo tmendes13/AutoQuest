@@ -1,14 +1,7 @@
 from google import genai
-import os
-from dotenv import load_dotenv
 from models.player import Player
 from google.genai import types
-
-load_dotenv()
-
-gemini_key = os.getenv("GEMINI_API_KEY")
-
-client = genai.Client(api_key = gemini_key)
+from config import client
 
 def setup_agent(system_prompt: str):
     return client.chats.create(
