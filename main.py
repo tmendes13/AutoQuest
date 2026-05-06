@@ -2,7 +2,6 @@ from agents.gm.narrator import *
 from agents.gm.memory_keeper import *
 from agents.gm.arbiter import *
 from agents.player import *
-from config import client
 from models.player import Player
 from models.dnd_class import *
 

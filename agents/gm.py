@@ -1,11 +1,8 @@
-from google import genai
-import os
-from google.genai import types
-from config import client
+from config import client, types, MODEL
 
 def setup_gm():
     return client.chats.create(
-        model="gemini-3-flash-preview",
+        model=MODEL,
         config=types.GenerateContentConfig(
             system_instruction=(
                 "You are the Game Master of a DnD campaign. "

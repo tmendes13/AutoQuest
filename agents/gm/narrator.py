@@ -1,10 +1,8 @@
-from google import genai
-from google.genai import types
-from config import client
+from config import client, types, MODEL
 
 def setup_narrator():
     return client.chats.create(
-        model="gemini-3-flash-preview",
+        model=MODEL,
         config=types.GenerateContentConfig(
             system_instruction=(
                 "You are the narrator of a Game Master of a DnD campaign. "
