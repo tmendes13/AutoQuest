@@ -1,6 +1,7 @@
-from agents.gm import *
+from agents.gm.narrator import *
+from agents.gm.memory_keeper import *
+from agents.gm.arbiter import *
 from agents.player import *
-from google import genai
 from config import client
 from models.player import Player
 from models.dnd_class import *
@@ -18,8 +19,10 @@ def main():
         )
 
     # Iniciar GM e campanha
-    gm_chat = setup_gm()
-    situation = start_campaign(gm_chat)
+    narrator_chat = setup_narrator()
+    mem_keeper_chat = setup_mem_keeper()
+    arbiter_chat = setup_arbiter()
+    situation = start_campaign(narrator_chat)
     print(f"\n GM: {situation}\n")
 
     # Game loop
@@ -30,9 +33,15 @@ def main():
             response = act(player, situation)
             print(f"{player.name}: {response}\n")
             actions.append(f"{player.name}: {response}")
+        print("------------------- PLAYERS ACTED -------------------")
+        memory = mem_keep(mem_keeper_chat, actions)
+        print(f"Memory Keeper -> Arbiter")
+        decision  = decide(arbiter_chat, memory)
+        print(f"Arbiter -> Narrator")
+        situation = narrate(narrator_chat, memory)
 
-        situation = narrate(gm_chat, actions)
         print(f"\n GM: {situation}\n")
         print("----------- END OF TURN -----------")
 
-main()
+if __name__ == "__main__":
+    main()
