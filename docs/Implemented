@@ -1,0 +1,335 @@
+AutoQuest é um protótipo em fase inicial de um sistema multi-agente para Tabletop Roleplay (D&D-style), onde um Game Master decomposto em três sub-agentes (Narrator, Memory Keeper, Arbiter) orquestra uma campanha com dois agentes jogadores autónomos, utilizando o Ollama como backend LLM através de um wrapper que emula a API do Google GenAI.
+
+================================================================================
+                    ESTADO DO PROJETO — 9 de Maio de 2026
+================================================================================
+
+1. ESTRUTURA DE DIRETÓRIOS
+--------------------------------------------------------------------------------
+AutoQuest/
+├── .env                          # API key do Gemini (NÃO utilizada atualmente)
+├── .gitignore                    # Ignora venv/, __pycache__/, *.pyc, .env
+├── Ideas.txt                     # Links para papers sobre memória (não implementados)
+├── README.md                     # Mínimo — apenas comando de ativação do venv
+├── config.py                     # Wrapper Ollama que emula a interface google.genai
+├── main.py                       # Entry point — game loop principal
+├── requirements.txt              # Dependências Python (ollama, httpx, pydantic, etc.)
+├── agents/
+│   ├── __init__.py
+│   ├── gm.py                     # GM monolítico LEGACY (não usado em main.py)
+│   ├── player.py                 # Setup e ação dos agentes jogadores
+│   └── gm/
+│       ├── __init__.py
+│       ├── arbiter.py            # Sub-agente Rule Arbiter
+│       ├── memory_keeper.py      # Sub-agente Memory Keeper
+│       └── narrator.py           # Sub-agente Narrator
+├── models/
+│   ├── __init__.py
+│   ├── dnd_class.py              # Dataclass Class (name, hit_die, abilities)
+│   ├── item.py                   # Dataclass Item (name, description, damage, heal, resistance)
+│   └── player.py                 # Dataclass Player (name, race, class, personality, HP, inventory, etc.)
+├── tests/
+│   ├── __init__.py
+│   └── test.py                   # Teste básico de instanciação dos models
+└── venv/                         # Ambiente virtual Python
+
+
+2. O QUE ESTÁ IMPLEMENTADO
+--------------------------------------------------------------------------------
+
+2.1. Backend LLM (config.py)
+    - Usa Ollama (modelo "gpt-oss:20b-cloud") como backend.
+    - Implementa um wrapper (_Client, _Chats, _Chat, _Response, types) que replica
+      a interface da API google.genai (client.chats.create, send_message, etc.),
+      permitindo que o resto do código use um padrão familiar.
+    - Cada _Chat mantém a sua própria lista de mensagens (histórico da conversa),
+      incluindo a system_instruction como primeira mensagem com role "system".
+    - O ficheiro .env contém uma GEMINI_API_KEY, mas esta NÃO é utilizada —
+      o sistema corre inteiramente via Ollama.
+
+2.2. Modelos de Dados (models/)
+    - Class (dnd_class.py): dataclass com name, hit_die, abilities (lista de str).
+    - Item (item.py): dataclass com name, description, damage (opcional, ex: "1d8"),
+      heal (opcional, ex: "2d4+2"), resistance (opcional, para armaduras).
+      NOTA: "descripion" está escrito com erro ortográfico no campo.
+    - Player (player.py): dataclass com name, race, dnd_class (Class), personality,
+      max_hp, current_hp (inicializado em __post_init__), inventory (list[Item]),
+      weapon, armor, e um campo chat (object) para guardar a instância _Chat do
+      agente. Métodos implementados:
+        - is_alive(): retorna True se current_hp > 0 (NOTA: não retorna False
+          explicitamente no else — bug menor).
+        - heal(amount), take_damage(amount): ajustam HP e imprimem no stdout.
+        - add_item(item): adiciona ao inventário e imprime no stdout.
+        - status(): devolve string formatada com nome, raça, classe, HP, weapon,
+          armor e inventário. (NOTA: "Iventory" tem typo.)
+
+2.3. Agentes Jogadores (agents/player.py)
+    - setup_agent(system_prompt): cria um chat Ollama com o system prompt do
+      jogador (ex: "You play as Thorin, a Dwarf Warrior. Personality: Brave...").
+    - act(player, situation): envia ao chat do jogador o seu status atual +
+      a situação descrita pelo GM + "What do you do?" e devolve a resposta.
+    - NÃO existe qualquer pipeline de Observação → Reflexão → Planeamento.
+      O agente age diretamente sobre a situação atual, sem memória de longo
+      prazo, sem reflexão sobre ações passadas e sem planeamento.
+
+2.4. Game Master — Sub-agentes (agents/gm/)
+    
+    2.4.1. Narrator (narrator.py)
+        - setup_narrator(): cria chat com system prompt de narrador de D&D.
+        - start_campaign(narrator_chat): pede ao narrador para iniciar a campanha
+          (descrever setting, ameaça, e perguntar aos jogadores o que fazem).
+        - narrate(narrator_chat, mem_keeper_prompt): recebe o output do Memory
+          Keeper e pede para narrar o resultado e descrever a nova situação.
+    
+    2.4.2. Memory Keeper (memory_keeper.py)
+        - setup_mem_keeper(): cria chat com system prompt de "track all events".
+        - mem_keep(gm_chat, player_actions): recebe lista de ações dos jogadores,
+          junta-as com "\n" e pede ao LLM para "keep the record of the events".
+        - NÃO mantém estado estruturado — apenas passa texto entre LLMs.
+    
+    2.4.3. Arbiter (arbiter.py)
+        - setup_arbiter(): cria chat com system prompt de árbitro que analisa
+          eventos e diz "if they make sense or not".
+        - decide(gm_chat, mem_keeper_prompt): envia o output do Memory Keeper
+          ao Arbiter e devolve o veredicto.
+        - CRÍTICO: O resultado do Arbiter (decision) é calculado no game loop
+          (linha 38 do main.py) mas NUNCA é usado! O fluxo ignora-o completamente
+          e passa diretamente à narração.
+
+2.5. Game Loop (main.py)
+    - Cria 2 jogadores hardcoded:
+        - Thorin: Dwarf Warrior, HP 40, personality "Brave and impulsive"
+        - Aelindra: Elf Mage, HP 25, personality "Curious and calculative"
+    - Para cada jogador, chama setup_agent() com um system prompt construído
+      a partir dos atributos do Player.
+    - Inicializa os 3 sub-agentes do GM (Narrator, Memory Keeper, Arbiter).
+    - Chama start_campaign() no Narrator para obter a situação inicial.
+    - Loop de 5 rondas (hardcoded):
+        1. Para cada jogador: act(player, situation) → imprime ação.
+        2. Memory Keeper: mem_keep(actions) → texto agregado.
+        3. Arbiter: decide(memory) → veredicto (CALCULADO MAS IGNORADO).
+        4. Narrator: narrate(memory) → nova situação.
+    - NOTA: O fluxo é linear e síncrono. Não há paralelismo.
+
+2.6. Testes (tests/test.py)
+    - Apenas um teste de integração básico: instancia Item, Class, Player,
+      chama add_item() e status(). Sem assertions — apenas prints.
+    - Nenhum teste unitário automatizado.
+
+2.7. GM Monolítico Legacy (agents/gm.py)
+    - Contém setup_gm(), start_campaign() e narrate() como um GM único.
+    - NÃO é importado nem usado em main.py. Existe como artefacto histórico
+      da primeira iteração, antes da decomposição em 3 sub-agentes.
+
+
+3. O QUE NÃO ESTÁ IMPLEMENTADO (GAPS VS VISÃO)
+--------------------------------------------------------------------------------
+
+3.1. Framework ReAct (Reason + Act) — NÃO IMPLEMENTADO
+    - A visão descreve o GM a usar ReAct para validar regras antes de narrar.
+    - Na prática, o Arbiter apenas recebe texto e diz "se faz sentido ou não".
+    - Não existe ciclo de reasoning (thought → action → observation).
+    - O veredicto do Arbiter é calculado mas nunca condiciona a narração.
+
+3.2. Arquitetura Cognitiva dos Jogadores — NÃO IMPLEMENTADA
+    - A visão menciona o pipeline Observação → Reflexão → Planeamento
+      (Park et al. 2023, "Generative Agents").
+    - Atualmente, o jogador recebe (status + situação) e age diretamente.
+    - Não existe:
+        - Memória de curto/longo prazo.
+        - Ciclo de reflexão (condensar sessões em traços de personalidade).
+        - Planeamento de ações futuras.
+        - Mecanismo de autocorreção.
+
+3.3. Estrutura de Estado do Mundo — NÃO IMPLEMENTADA
+    - A visão descreve "localizações, pontos de vida e inventários" como
+      "estrutura de dados dinâmica" gerida pelo Memory Keeper.
+    - Atualmente, o Memory Keeper apenas passa texto entre LLMs.
+    - Não existe:
+        - Estado estruturado do mundo (localizações, NPCs, quests).
+        - Tracking de inventário real (o modelo Player tem inventory, mas
+          o game loop nunca o atualiza com base nas ações).
+        - Mecânica de dano, cura ou combate aplicada programaticamente.
+
+3.4. Validação de Regras — NÃO IMPLEMENTADA
+    - O Arbiter não tem acesso a um livro de regras estruturado.
+    - Não valida se um jogador pode realmente realizar uma ação (ex: usar
+      um item que não possui, atacar sem arma, etc.).
+
+3.5. Número Variável de Jogadores — NÃO IMPLEMENTADO
+    - Os 2 jogadores estão hardcoded em main.py.
+
+3.6. Jogador Humano — NÃO IMPLEMENTADO
+    - A visão menciona permitir que um humano se junte como jogador.
+    - Não existe qualquer interface para input humano.
+
+3.7. Dice Rolling / Mecânicas de Probabilidade — NÃO IMPLEMENTADO
+    - A visão assume que "não tenta modelar mecânicas espaciais precisas
+      ou matemáticas de probabilidade complexas", mas zero mecânicas de
+      dados existem atualmente.
+
+3.8. Avaliação de Consistência — NÃO IMPLEMENTADA
+    - A visão menciona "avaliação focada em consistência mecânica".
+    - Não existe qualquer framework de avaliação ou logging estruturado.
+
+3.9. Gestão de Erros — NÃO IMPLEMENTADA
+    - Não há try/except, retry logic, ou tratamento de falhas do Ollama.
+
+
+4. PROBLEMAS E BUGS CONHECIDOS
+--------------------------------------------------------------------------------
+
+4.1. CRÍTICO: API Key exposta no .env
+    - O ficheiro .env contém uma chave GEMINI_API_KEY real.
+    - Embora .env esteja no .gitignore, o ficheiro existe no repositório
+      local e pode ter sido commitado antes de ser adicionado ao .gitignore.
+    - Recomendação: fazer rollback da key imediatamente (revogar na Google
+      Cloud Console) e usar variáveis de ambiente.
+
+4.2. O veredicto do Arbiter é ignorado
+    - Linha 38 de main.py: decision = decide(arbiter_chat, memory)
+    - A variável 'decision' nunca é usada. O fluxo passa diretamente à
+      narração, tornando o Arbiter inútil no estado atual.
+
+4.3. Player.is_alive() não retorna False
+    - Se current_hp <= 0, a função não retorna nada (None implicitamente).
+    - Deveria ter um else: return False.
+
+4.4. Typos nos modelos
+    - Item.descripion → deveria ser "description".
+    - Player.status() → "Iventory" → deveria ser "Inventory".
+
+4.5. Número de rondas hardcoded
+    - O loop corre exatamente 5 rondas. Não há condição de vitória/derrota
+      ou término natural da campanha.
+
+4.6. Sem separação entre lógica de jogo e output
+    - Todos os prints estão espalhados pelos modelos e agentes (ex: heal(),
+      take_damage(), add_item() fazem print diretamente). Não há logging
+      estruturado.
+
+4.7. README.md quase vazio
+    - Apenas contém o comando de ativação do venv. Não explica como instalar
+      dependências, iniciar o Ollama, ou correr o projeto.
+
+
+5. DEPENDÊNCIAS (requirements.txt)
+--------------------------------------------------------------------------------
+- ollama==0.4.8         — Cliente Python para Ollama (backend LLM).
+- httpx==0.28.1         — HTTP client (usado pelo ollama).
+- pydantic==2.13.3      — Validação de dados (usado pelo ollama).
+- tenacity==9.1.4       — Retry logic (não usado atualmente no código).
+- Outras: certifi, h11, httpcore, idna, anyio, sniffio, websockets, etc.
+  (dependências transitivas).
+
+NOTA: O modelo usado é "gpt-oss:20b-cloud", definido em config.py. Este modelo
+tem de estar disponível localmente via Ollama (`ollama pull gpt-oss:20b-cloud`).
+
+
+6. FLUXO DE EXECUÇÃO ATUAL (main.py)
+--------------------------------------------------------------------------------
+1. main() é chamada.
+2. Cria 2 objetos Player (Thorin, Aelindra) com atributos hardcoded.
+3. Para cada Player, chama setup_agent() que cria um chat Ollama com
+   system prompt descrevendo a personagem.
+4. Cria 3 chats Ollama para os sub-agentes do GM (Narrator, Memory Keeper, Arbiter).
+5. Chama start_campaign(narrator_chat) → o Narrador gera a situação inicial.
+6. Loop de 5 rondas:
+   a. Para cada jogador: act(player, situation) → LLM gera ação.
+   b. Memory Keeper: mem_keep(mem_keeper_chat, actions) → LLM agrega eventos.
+   c. Arbiter: decide(arbiter_chat, memory) → LLM valida (resultado ignorado).
+   d. Narrator: narrate(narrator_chat, memory) → LLM narra nova situação.
+   e. Volta a (a) com a nova situação.
+
+
+7. COMPARAÇÃO COM A VISÃO ORIGINAL
+--------------------------------------------------------------------------------
+┌──────────────────────────────────┬────────────────────────────────────┐
+│ Visão Original                   │ Estado Atual                       │
+├──────────────────────────────────┼────────────────────────────────────┤
+│ GM decomposto em 3 sub-agentes   │ ✅ Estrutura de ficheiros existe   │
+│ (Arbiter, Narrator, Memory       │    mas o Arbiter é ignorado no     │
+│  Keeper)                         │    game loop.                      │
+├──────────────────────────────────┼────────────────────────────────────┤
+│ Memory Keeper como fonte         │ ❌ Apenas passa texto entre LLMs.  │
+│ absoluta de verdade com estado   │    Zero estado estruturado.        │
+│ do mundo estruturado             │                                    │
+├──────────────────────────────────┼────────────────────────────────────┤
+│ Rule Arbiter valida regras com   │ ❌ Arbiter só diz \"faz sentido?\". │
+│ ReAct (Reason + Act)             │    Sem ReAct, sem regras, output   │
+│                                  │    ignorado.                       │
+├──────────────────────────────────┼────────────────────────────────────┤
+│ Jogadores com pipeline           │ ❌ Apenas system prompt + ação      │
+│ Observação→Reflexão→Planeamento  │    direta. Sem memória, reflexão   │
+│ (Park et al. 2023)               │    ou planeamento.                 │
+├──────────────────────────────────┼────────────────────────────────────┤
+│ Número variável de jogadores     │ ❌ 2 jogadores hardcoded.          │
+├──────────────────────────────────┼────────────────────────────────────┤
+│ Jogador humano                   │ ❌ Não implementado.               │
+├──────────────────────────────────┼────────────────────────────────────┤
+│ Mecânicas de jogo (dados, etc.)  │ ❌ Não implementado.               │
+├──────────────────────────────────┼────────────────────────────────────┤
+│ Avaliação de consistência        │ ❌ Não implementado.               │
+└──────────────────────────────────┴────────────────────────────────────┘
+
+
+8. PRÓXIMOS PASSOS SUGERIDOS (POR ORDEM DE PRIORIDADE)
+--------------------------------------------------------------------------------
+8.1. CRÍTICO — Segurança
+    - Revogar a API key exposta no .env imediatamente.
+    - Confirmar que o .env nunca foi commitado (git log -- .env).
+
+8.2. ALTO — Fazer o Arbiter ser útil
+    - Usar o output do Arbiter para condicionar a narração.
+    - Ex: se o Arbiter disser que uma ação é inválida, o Narrator deve
+      descrever a falha em vez do sucesso.
+
+8.3. ALTO — Estado do mundo estruturado
+    - Criar uma classe WorldState (localizações, NPCs, items no chão, etc.).
+    - O Memory Keeper deve atualizar este estado (não apenas passar texto).
+    - Passar o estado estruturado ao Arbiter e ao Narrator.
+
+8.4. MÉDIO — Memória dos jogadores
+    - Implementar um sistema de memória (curto prazo: últimas N interações;
+      longo prazo: resumos/reflexões periódicas).
+    - Adicionar um ciclo de reflexão a cada K rondas.
+
+8.5. MÉDIO — Mecânicas de jogo
+    - Implementar dice rolling (d20, dano, etc.).
+    - Integrar com o estado do mundo (HP, inventário, etc.).
+
+8.6. BAIXO — Qualidade de código
+    - Corrigir typos (descripion → description, Iventory → Inventory).
+    - Adicionar docstrings.
+    - Adicionar logging estruturado em vez de prints.
+    - Tornar o número de rondas e jogadores configurável.
+
+8.7. BAIXO — Testes
+    - Adicionar testes unitários com assertions.
+    - Testar os modelos isoladamente.
+    - Mock do Ollama para testes determinísticos.
+
+
+9. COMO CORRER O PROJETO
+--------------------------------------------------------------------------------
+Pré-requisitos:
+    1. Python 3.10+ instalado.
+    2. Ollama instalado e a correr (https://ollama.com).
+    3. Modelo \"gpt-oss:20b-cloud\" disponível (`ollama pull gpt-oss:20b-cloud`).
+
+Passos:
+    1. cd AutoQuest
+    2. python -m venv venv
+    3. venv\\Scripts\\activate   (Windows)
+       OU source venv/bin/activate (Linux/Mac)
+    4. pip install -r requirements.txt
+    5. python main.py
+
+NOTA: O README.md atual tem o comando de ativação para Linux/Mac
+(\"source .venv/bin/activate\") mas o projeto está a ser desenvolvido em Windows
+(\"venv\\Scripts\\activate\"). O nome da pasta também difere (.venv vs venv).
+
+
+================================================================================
+Fim do documento — Estado do projeto a 9 de Maio de 2026
+================================================================================

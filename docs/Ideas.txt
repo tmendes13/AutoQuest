@@ -1,0 +1,10 @@
+- MEMORY PAPERS 
+https://arxiv.org/abs/2504.19413
+https://arxiv.org/abs/2502.12110
+https://arxiv.org/abs/2504.02441
+
+
+O QUE AINDA FALTA FAZER:
+- criação de player (not hardcoded)
+- criação de uma sessão zero (os players vão definir quem são, personalidade...)
+- criação de um ficheiro com as faltas dadas por cada um dos players/narrator (o arbiter vai apontando as faltas e quando chegarmos a um X de faltas o jogo termina)

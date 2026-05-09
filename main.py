@@ -1,46 +1,53 @@
-from agents.gm.narrator import *
-from agents.gm.memory_keeper import *
-from agents.gm.arbiter import *
-from agents.player import *
+from agents.gm.gm import (
+    setup_gm,
+    begin_campaign,
+    run_turn,
+    GMRetriesExhaustedError,
+)
+from agents.player import setup_agent
 from models.player import Player
-from models.dnd_class import *
+from models.dnd_class import Class
+
+
+NUM_ROUNDS = 5
+
 
 def main():
-    thorin = Player(name="Thorin", race="Dwarf", dnd_class=Class("Warrior", 10), personality="Brave and impulsive", max_hp=40)
-    aelindra = Player(name="Aelindra", race="Elf", dnd_class=Class("Mage", 6), personality="Curious and calculative", max_hp=25)
-    players = [thorin, aelindra]
+    # Single player for now - keeps the focus on the GM pipeline and avoids
+    # multi-player coordination concerns for this iteration.
+    thorin = Player(
+        name="Thorin",
+        race="Dwarf",
+        dnd_class=Class("Warrior", 10),
+        personality="Brave and impulsive",
+        max_hp=40,
+    )
+    thorin.chat = setup_agent(
+        f"You play as {thorin.name}, a {thorin.race} {thorin.dnd_class.name}. "
+        f"Personality: {thorin.personality}. "
+        "Answer in first person, in 1 to 3 short sentences. "
+        "Only use items, weapons or abilities that the situation says you have."
+    )
 
-    # Dar chat a cada player
-    for player in players:
-        player.chat = setup_agent(
-            f"You play as {player.name}, a {player.race} {player.dnd_class.name}. "
-            f"Personality: {player.personality}. Answer in first person."
-        )
+    # The GM resets the shared memory file, sets up Narrator, Memory Keeper
+    # and Arbiter, and seeds the memory with the validated campaign opening.
+    gm = setup_gm()
+    situation = begin_campaign(gm)
+    print(f"\n[GM-Narrator opening] {situation}\n")
 
-    # Iniciar GM e campanha
-    narrator_chat = setup_narrator()
-    mem_keeper_chat = setup_mem_keeper()
-    arbiter_chat = setup_arbiter()
-    situation = start_campaign(narrator_chat)
-    print(f"\n GM: {situation}\n")
+    try:
+        for round_idx in range(NUM_ROUNDS):
+            print(f"\n=================== ROUND {round_idx + 1} ===================")
+            situation = run_turn(gm, thorin, situation)
+            print(f"\n[GM-Narrator] {situation}\n")
+            print("----------- END OF TURN -----------")
+    except GMRetriesExhaustedError as e:
+        print("\n=================== CAMPAIGN ABORTED ===================")
+        print(f"[GM] {e}")
+        print(f"[GM] Offending actor : {e.actor}")
+        print(f"[GM] Last text       : {e.last_text}")
+        print(f"[GM] Arbiter reason  : {e.last_reason}")
 
-    # Game loop
-    for round in range(5):
-        actions = []
-
-        for player in players:
-            response = act(player, situation)
-            print(f"{player.name}: {response}\n")
-            actions.append(f"{player.name}: {response}")
-        print("------------------- PLAYERS ACTED -------------------")
-        memory = mem_keep(mem_keeper_chat, actions)
-        print(f"Memory Keeper -> Arbiter")
-        decision  = decide(arbiter_chat, memory)
-        print(f"Arbiter -> Narrator")
-        situation = narrate(narrator_chat, memory)
-
-        print(f"\n GM: {situation}\n")
-        print("----------- END OF TURN -----------")
 
 if __name__ == "__main__":
     main()
