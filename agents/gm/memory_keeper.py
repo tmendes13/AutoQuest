@@ -54,6 +54,7 @@ def mem_keep(mk_chat, memory_path: str, author: str, raw_text: str) -> str:
         f"TEXT:\n{raw_text}"
     )
     summary = response.text.strip()
+    print(f"Memory Keeper Summary: {summary}")
     return memory_store.append_entry(
         path=memory_path,
         author=author,
