@@ -1,0 +1,175 @@
+[GM-Narrator opening] You wake in the dim stone hall of the ruined tower of Tyren’s Keep, the glow of your torches flickering against walls scarred by an ancient battle. Outside, the wind howls, carrying a sodden scent of rain that has begun to seep through the cracked archway—an ominous storm that never seemed to cross a single sky. At the far end of the hall, a trembling glass orb pulses with an eldritch light, revealing faint runes that none of you have seen before. What do you do?
+
+
+=================== ROUND 1 ===================
+
+>>> Party deliberation (attempt 1/3) <<<
+
+--- Party deliberation: initial proposals ---
+  [Thorin] proposes: I pull my shield—well, actually I don't have one—so I step forward with my bare hands, driven by curiosity: I march toward the trembling glass orb to see what secrets it holds.
+  [Aelindra] proposes: I cautiously step forward, keeping my hands raised to feel the orb’s hum. I focus my elven senses on the glowing runes, attempting to read their meaning before I touch it.
+
+--- Starter: Thorin ---
+
+[Thorin synthesises]:
+We advance as one: I lead the way with bare hands, while she holds her hands out and uses her elven senses to read the eldritch runes before I touch the orb.
+
+
+--- Circulation pass 1 (queue: ['Aelindra'], remaining: {'Aelindra': 3}) ---
+  [Aelindra] MODIFIES (remaining 2/3):
+  We move together through the hall, keeping a cautious distance. Aelindra reads the runes with her hands drawn, readying her focus before any of us touches the orb. This gives us time to react to any hidden dangers.
+
+--- Circulation pass 2 (queue: ['Thorin'], remaining: {'Thorin': 3}) ---
+  [Thorin] APPROVES
+
+--- Party FINAL response ---
+We move together through the hall, keeping a cautious distance. Aelindra reads the runes with her hands drawn, readying her focus before any of us touches the orb. This gives us time to react to any hidden dangers.
+
+[Arbiter] Party action accepted. DECISION: VALID
+REASON: No validated fact contradicts the new description.
+
+Narrator (attempt 1): Aelindra’s hand glides over the trembling orb, beads of sweat forming at her brow as she draws a luminous focus. The glass hums, its surface rippling like a pond disturbed by a sudden touch, and the fragile runes blaze brighter, lighting the stone with a silver-waved glow. For a moment the hall stills, the wind’s howl stilled by the orb’s approving pulse, and a gentle wind dives through the cracked archway, carrying with it a soft, almost inaudible whisper: “Answer before the storm burns.” A faint glow touches the stair’s rail, suggesting a door beyond the archway that might hold the key to the keep? What do the players do next?
+
+[Arbiter] Narration accepted. DECISION: VALID  
+REASON: The entry adds new details but does not contradict any established fact.
+
+[GM-Narrator] Aelindra’s hand glides over the trembling orb, beads of sweat forming at her brow as she draws a luminous focus. The glass hums, its surface rippling like a pond disturbed by a sudden touch, and the fragile runes blaze brighter, lighting the stone with a silver-waved glow. For a moment the hall stills, the wind’s howl stilled by the orb’s approving pulse, and a gentle wind dives through the cracked archway, carrying with it a soft, almost inaudible whisper: “Answer before the storm burns.” A faint glow touches the stair’s rail, suggesting a door beyond the archway that might hold the key to the keep? What do the players do next?
+
+----------- END OF TURN -----------
+
+=================== ROUND 2 ===================
+
+>>> Party deliberation (attempt 1/3) <<<
+
+--- Party deliberation: initial proposals ---
+  [Thorin] proposes: I step forward toward the faint glow on the stair rail, feel the cold stone beneath my feet, and carefully inspect what marks the threshold.
+  [Aelindra] proposes: I step toward the faint glow on the stair rail, my fingers drawn to the orb’s pulsing light, preparing to open the door that may hold the keep’s key.
+
+--- Starter: Thorin ---
+
+[Thorin synthesises]:
+We advance together toward the faint glow on the stair rail, its silver‑waved light guiding us. I press my hand to the stone to feel any hidden mechanism, while I keep my eyes on the orb for any warning. If the door yields, we open it together, ready for whatever lies beyond.
+
+
+--- Circulation pass 1 (queue: ['Aelindra'], remaining: {'Aelindra': 3}) ---
+  [Aelindra] APPROVES
+
+--- Party FINAL response ---
+We advance together toward the faint glow on the stair rail, its silver‑waved light guiding us. I press my hand to the stone to feel any hidden mechanism, while I keep my eyes on the orb for any warning. If the door yields, we open it together, ready for whatever lies beyond.
+
+[Arbiter] Party action accepted. DECISION: VALID  
+REASON: The party’s activity follows the newly described glow and door, with no contradictions.
+
+Narrator (attempt 1): The faint glow brightens, tracing a hidden seam along the stair rail, and the stone beneath your tailling hand pulses ever so slightly, as if waiting. A subtle pressure reveals itself—an invisible lock that resists at first, but with a gentle pull, it clicks and gives way, offering the promise of an unsealed door beyond the archway. The orb keeps its silver‑waved glow steady, but the wind within the keep seems to grow steadier, as if the storm is reluctant to break. The door’s hinges creak open, and a narrow, dimly lit corridor beyond. What do you do next?
+
+[Arbiter] Narration accepted. DECISION: VALID  
+REASON: The new description expands on the existing door and glow without contradicting any established facts.
+
+[GM-Narrator] The faint glow brightens, tracing a hidden seam along the stair rail, and the stone beneath your tailling hand pulses ever so slightly, as if waiting. A subtle pressure reveals itself—an invisible lock that resists at first, but with a gentle pull, it clicks and gives way, offering the promise of an unsealed door beyond the archway. The orb keeps its silver‑waved glow steady, but the wind within the keep seems to grow steadier, as if the storm is reluctant to break. The door’s hinges creak open, and a narrow, dimly lit corridor beyond. What do you do next?
+
+----------- END OF TURN -----------
+
+=================== ROUND 3 ===================
+
+>>> Party deliberation (attempt 1/3) <<<
+
+--- Party deliberation: initial proposals ---
+  [Thorin] proposes: I step forward into the dim corridor, keeping my hand on the stone rail to maintain balance as we proceed.
+  [Aelindra] proposes: I step into the dim corridor, keeping my hands spread to maintain the luminous focus.  
+I watch for any changes in the orb’s glow, prepared to react if a threat appears.
+
+--- Starter: Thorin ---
+
+[Thorin synthesises]:
+We step together into the dim corridor. I keep my hand on the stone rail to steady us, while Aelindra spreads her fingers to sustain the luminous focus, watching the orb’s glow for any change before we proceed.
+
+
+--- Circulation pass 1 (queue: ['Aelindra'], remaining: {'Aelindra': 3}) ---
+  [Aelindra] APPROVES
+
+--- Party FINAL response ---
+We step together into the dim corridor. I keep my hand on the stone rail to steady us, while Aelindra spreads her fingers to sustain the luminous focus, watching the orb’s glow for any change before we proceed.
+
+[Arbiter] Party action accepted. DECISION: VALID  
+REASON: The party’s action continues logically from the established corridor opening.
+
+Narrator (attempt 1): You step into the narrow corridor, the iron stair rail cool under your grip, its dim lighting throwing long, jagged shadows along the stone walls. Aelindra's focused light remains steady, casting a pale halo over the corridor's floor, but the wind outside has settled into a faint, steady hiss that drips as though it carries the keep's own breath. Ahead, flickers of faint, iridescent runes seem to pulse slowly on the walls, hinting that the very stone remembers the orb's call. The corridor curves slightly to your right, where a low, damp cavity glows with a pale blue light, as if inviting you deeper into the keep. What do you do next?
+
+[Arbiter] Narration REJECTED. DECISION: INVALID  
+REASON: The candidate states the rail is iron, contradicting the validated fact that it is a stone rail.
+
+Narrator (attempt 2): The corridor’s stone walls crawl with faint, iridescent runes that pulse gently, like a heartbeat echoing an unseen rhythm. Ahead, a small cavity glows a pale blue, its surface slick with damp that shivers under the orb’s light. A rusted, sinuous archway opens into the cavity, lattice‑like iron filaments shimmer in the weak glow and hint at some old mechanism still humming. The wind whispering through the cracked archway becomes a low, urgent hum, as if urging the party forward. What will you do next?
+
+[Arbiter] Narration accepted. DECISION: VALID  
+REASON: No new detail contradicts any established information.
+
+[GM-Narrator] The corridor’s stone walls crawl with faint, iridescent runes that pulse gently, like a heartbeat echoing an unseen rhythm. Ahead, a small cavity glows a pale blue, its surface slick with damp that shivers under the orb’s light. A rusted, sinuous archway opens into the cavity, lattice‑like iron filaments shimmer in the weak glow and hint at some old mechanism still humming. The wind whispering through the cracked archway becomes a low, urgent hum, as if urging the party forward. What will you do next?
+
+----------- END OF TURN -----------
+
+=================== ROUND 4 ===================
+
+>>> Party deliberation (attempt 1/3) <<<
+
+--- Party deliberation: initial proposals ---
+  [Thorin] proposes: I step forward toward the pale‑blue cavity, hand extended to feel the damp surface, while keeping my foot on the stone rail for balance.
+  [Aelindra] proposes: I edge closer to the pale‑blue cavity, keeping my hand steady on the stone rail, and use the luminous focus to illuminate its damp surface, watching how the orb’s light makes the runes pulse and the iron filaments shimmer.
+
+--- Starter: Aelindra ---
+
+[Aelindra synthesises]:
+We step forward together, my foot on the rail for balance while Aelindra keeps her hand steady on it.
+I trace the cavity’s damp surface for any hidden seam, and Aelindra directs the orb’s glow to the rusted, sinuous iron filaments, watching for a spot that will trigger the old mechanism.
+
+
+--- Circulation pass 1 (queue: ['Thorin'], remaining: {'Thorin': 3}) ---
+  [Thorin] APPROVES
+
+--- Party FINAL response ---
+We step forward together, my foot on the rail for balance while Aelindra keeps her hand steady on it.
+I trace the cavity’s damp surface for any hidden seam, and Aelindra directs the orb’s glow to the rusted, sinuous iron filaments, watching for a spot that will trigger the old mechanism.
+
+[Arbiter] Party action accepted. DECISION: VALID  
+REASON: The new detail about the narrator holding the rail does not contradict any established fact.
+
+Narrator (attempt 1): The pale‑blue cavity shivers as Aelindra’s directed glow kisses the rusted sinuous filaments; each filament hums and flickers, then a low, resonating click echoes through the corridor. The iron lattice trembles, its rusted edges loosening, and a hidden panel slides inward, revealing a narrow, stone‑walled chamber that had been sealed away. Damp air from within the panel carries a faint scent of ozone and old iron, and the cavity’s surface gleams as if it has long awaited the orb’s intervention. The wind beyond the cracked archway pounds harder, a low hum growing into an urgent crescendo that seems to press on the panel’s seam. Aelindra watches the orb’s glow, expecting the next reaction—do the filaments continue to sing, or does the panel unsettle further?
+
+[Arbiter] Narration accepted. DECISION: VALID  
+REASON: No new detail contradicts any established fact.
+
+[GM-Narrator] The pale‑blue cavity shivers as Aelindra’s directed glow kisses the rusted sinuous filaments; each filament hums and flickers, then a low, resonating click echoes through the corridor. The iron lattice trembles, its rusted edges loosening, and a hidden panel slides inward, revealing a narrow, stone‑walled chamber that had been sealed away. Damp air from within the panel carries a faint scent of ozone and old iron, and the cavity’s surface gleams as if it has long awaited the orb’s intervention. The wind beyond the cracked archway pounds harder, a low hum growing into an urgent crescendo that seems to press on the panel’s seam. Aelindra watches the orb’s glow, expecting the next reaction—do the filaments continue to sing, or does the panel unsettle further?
+
+----------- END OF TURN -----------
+
+=================== ROUND 5 ===================
+
+>>> Party deliberation (attempt 1/3) <<<
+
+--- Party deliberation: initial proposals ---
+  [Thorin] proposes: I step forward into the newly revealed stone‑walled chamber, keeping my hands free to react if something stirs behind the panel.
+  [Aelindra] proposes: I keep my hand steady on the stone rail, channeling the orb’s glow deep into the newly revealed chamber entrance.
+I watch for any sudden reaction of the iron lattice or of the phosphorescent runes, ready to shift my focus if the panel moves again.
+
+--- Starter: Thorin ---
+
+[Thorin synthesises]:
+We step into the newly revealed chamber, Thorin’s hands free to react to any movement, while Aelindra keeps her hand on the rail and channels the orb’s glow deeper into the entrance. Together we watch for any sudden reaction of the iron lattice or phosphorescent runes, ready to adjust our focus if the panel moves again.
+
+
+--- Circulation pass 1 (queue: ['Aelindra'], remaining: {'Aelindra': 3}) ---
+  [Aelindra] APPROVES
+
+--- Party FINAL response ---
+We step into the newly revealed chamber, Thorin’s hands free to react to any movement, while Aelindra keeps her hand on the rail and channels the orb’s glow deeper into the entrance. Together we watch for any sudden reaction of the iron lattice or phosphorescent runes, ready to adjust our focus if the panel moves again.
+
+[Arbiter] Party action accepted. DECISION: VALID
+REASON: Adding a new party member Thorin does not contradict any established fact.
+
+Narrator (attempt 1): The newly revealed chamber stretches ahead, a narrow, stone‑walled alcove that feels as if it has been sealed away for centuries. The damp air that billows from within carries a sharp, ozone‑tinged scent and the faint echo of metal scraping against metal. In the center, a single faintly phosphorescent rune shines on the wall, its glow dim yet unmistakable, and the slit‑shaped opening in the stone wall beneath the rusted panel is framed by fresh, blackened stone that seems to have never seen light. The orb’s silver‑waved glow now pours deeper into the entrance, tracing an invisible line along the lattice, and Thorin’s free hands keep an eye on the shifting panels, ready to react if the iron lattice warbles or a new rune flickers into visibility. What will you do next?
+
+[Arbiter] Narration accepted. DECISION: VALID
+REASON: No detail contradicts any established fact, while adding permissible new information.
+
+[GM-Narrator] The newly revealed chamber stretches ahead, a narrow, stone‑walled alcove that feels as if it has been sealed away for centuries. The damp air that billows from within carries a sharp, ozone‑tinged scent and the faint echo of metal scraping against metal. In the center, a single faintly phosphorescent rune shines on the wall, its glow dim yet unmistakable, and the slit‑shaped opening in the stone wall beneath the rusted panel is framed by fresh, blackened stone that seems to have never seen light. The orb’s silver‑waved glow now pours deeper into the entrance, tracing an invisible line along the lattice, and Thorin’s free hands keep an eye on the shifting panels, ready to react if the iron lattice warbles or a new rune flickers into visibility. What will you do next?    
+
+----------- END OF TURN -----------

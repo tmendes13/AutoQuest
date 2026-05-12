@@ -6,25 +6,26 @@ for the previous one to finish, so there are no race conditions on the file.
 
 Per-turn flow (after the campaign opening has already been emitted):
 
-    1.  Receive the player's response.
-    2.  Memory Keeper summarises it and appends a NOT-validated entry tagged
-        with the player's name.
+    1.  The party runs an internal deliberation (see :mod:`agents.party`)
+        and produces ONE official response to the GM.
+    2.  Memory Keeper summarises the party response and appends a
+        NOT-validated entry tagged ``"party"``.
     3.  Arbiter validates that entry.
             VALID    -> label flipped to validated.
             INVALID  -> entry deleted; every remaining not-validated entry
-                        is wiped and the player is asked again
+                        is wiped and the party deliberates again
                         (up to ``MAX_RETRIES``).
     4.  Narrator reads the (now-updated) validated memory and produces the
         next part of the story.
     5.  Memory Keeper summarises the narrator's text and appends a
-        NOT-validated entry tagged "narrator".
+        NOT-validated entry tagged ``"narrator"``.
     6.  Arbiter validates that entry.
             VALID    -> label flipped to validated.
             INVALID  -> entry deleted; every remaining not-validated entry
                         is wiped and the narrator is asked again
                         (up to ``MAX_RETRIES``).
     7.  The narrator's text - now in the memory file as a validated entry -
-        is returned and forwarded to the player as the next situation.
+        is returned and forwarded to the party as the next situation.
 """
 
 from dataclasses import dataclass
@@ -33,7 +34,7 @@ from agents.gm import memory_store
 from agents.gm.arbiter import setup_arbiter, arbitrate
 from agents.gm.memory_keeper import setup_mem_keeper, mem_keep
 from agents.gm.narrator import setup_narrator, start_campaign, narrate
-from agents.player import act
+from agents.party import deliberate
 from models.player import Player
 
 
@@ -59,6 +60,11 @@ class GMRetriesExhaustedError(RuntimeError):
         self.actor = actor
         self.last_text = last_text
         self.last_reason = last_reason
+
+
+# Label used in the memory file for entries that summarise the party's
+# joint response (produced by :func:`agents.party.deliberate`).
+PARTY_AUTHOR = "party"
 
 
 @dataclass
@@ -121,32 +127,38 @@ def _ingest_with_arbitration(
     return is_valid, arbiter_text
 
 
-def run_turn(gm: GameMaster, player: Player, situation: str) -> str:
-    """Run one full GM turn for a single player.
+def run_turn(gm: GameMaster, party: list[Player], situation: str) -> str:
+    """Run one full GM turn for a party of one or more players.
+
+    The party runs an internal deliberation (see :mod:`agents.party`) and
+    produces a single joint response, which is then submitted to the
+    Memory Keeper + Arbiter pipeline as usual.
 
     Returns the narrator's new situation text - already in the memory file
     and validated - which the caller should pass back as the ``situation``
     argument of the next turn.
     """
-    # ---- 1. Player acts (with retries on invalidation) ------------------
-    player_response = ""
+    # ---- 1. Party deliberates (with retries on invalidation) ------------
+    party_response = ""
     arbiter_text = ""
     for attempt in range(1, MAX_RETRIES + 1):
-        player_response = act(player, situation)
-        print(f"\n{player.name} (attempt {attempt}): {player_response}\n")
+        print(
+            f"\n>>> Party deliberation (attempt {attempt}/{MAX_RETRIES}) <<<"
+        )
+        party_response, _log = deliberate(party, situation, gm.memory_path)
 
         is_valid, arbiter_text = _ingest_with_arbitration(
-            gm, author=player.name, raw_text=player_response
+            gm, author=PARTY_AUTHOR, raw_text=party_response
         )
         if is_valid:
-            print(f"[Arbiter] Player action accepted. {arbiter_text.strip()}")
+            print(f"[Arbiter] Party action accepted. {arbiter_text.strip()}")
             break
-        print(f"[Arbiter] Player action REJECTED. {arbiter_text.strip()}")
+        print(f"[Arbiter] Party action REJECTED. {arbiter_text.strip()}")
     else:
-        # Retries exhausted: stop the game, the player keeps hallucinating.
+        # Retries exhausted: stop the game, the party keeps hallucinating.
         raise GMRetriesExhaustedError(
-            actor=f"player:{player.name}",
-            last_text=player_response,
+            actor=PARTY_AUTHOR,
+            last_text=party_response,
             last_reason=arbiter_text.strip(),
         )
 
