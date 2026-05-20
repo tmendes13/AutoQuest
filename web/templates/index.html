@@ -1,0 +1,768 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AutoQuest - D&D Campaign</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.4/socket.io.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Crimson+Text:ital,wght@0,400;0,600;1,400&family=JetBrains+Mono:wght@300;400&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0d0d0d;
+            --bg-secondary: #1a1a2e;
+            --bg-card: #16213e;
+            --bg-card-hover: #1a2847;
+            --accent-gold: #d4af37;
+            --accent-gold-dim: #b8941f;
+            --accent-red: #c0392b;
+            --accent-blue: #2980b9;
+            --accent-green: #27ae60;
+            --accent-purple: #8e44ad;
+            --text-primary: #e8e8e8;
+            --text-secondary: #a0a0a0;
+            --text-narration: #f0e6d3;
+            --border-color: #2a2a4a;
+            --border-gold: #d4af3744;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Crimson Text', serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, var(--bg-secondary), #0f3460);
+            border-bottom: 2px solid var(--border-gold);
+            padding: 1rem 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header h1 {
+            font-family: 'Cinzel', serif;
+            font-weight: 900;
+            font-size: 1.8rem;
+            color: var(--accent-gold);
+            text-shadow: 0 0 20px rgba(212, 175, 55, 0.3);
+            letter-spacing: 2px;
+        }
+
+        .header-controls {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .round-badge {
+            font-family: 'Cinzel', serif;
+            background: rgba(212, 175, 55, 0.1);
+            border: 1px solid var(--accent-gold-dim);
+            padding: 0.4rem 1rem;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            color: var(--accent-gold);
+        }
+
+        .btn-start {
+            font-family: 'Cinzel', serif;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--accent-gold-dim), var(--accent-gold));
+            color: #0d0d0d;
+            border: none;
+            padding: 0.6rem 1.5rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
+            letter-spacing: 1px;
+        }
+
+        .btn-start:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(212, 175, 55, 0.4);
+        }
+
+        .btn-start:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        /* Main Layout */
+        .main-container {
+            display: grid;
+            grid-template-columns: 280px 1fr 320px;
+            gap: 0;
+            height: calc(100vh - 65px);
+        }
+
+        /* Left Panel - Players */
+        .panel-left {
+            background: var(--bg-secondary);
+            border-right: 1px solid var(--border-color);
+            padding: 1.2rem;
+            overflow-y: auto;
+        }
+
+        .panel-title {
+            font-family: 'Cinzel', serif;
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: var(--accent-gold);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid var(--border-gold);
+        }
+
+        .player-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 0.8rem;
+            transition: all 0.3s ease;
+        }
+
+        .player-card.active {
+            border-color: var(--accent-gold);
+            box-shadow: 0 0 15px rgba(212, 175, 55, 0.15);
+        }
+
+        .player-card .player-name {
+            font-family: 'Cinzel', serif;
+            font-weight: 700;
+            font-size: 1.05rem;
+            color: var(--text-primary);
+            margin-bottom: 0.3rem;
+        }
+
+        .player-card .player-meta {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.6rem;
+        }
+
+        .player-card .player-personality {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            font-style: italic;
+            margin-bottom: 0.6rem;
+        }
+
+        .hp-bar-container {
+            background: #1a1a1a;
+            border-radius: 10px;
+            height: 8px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .hp-bar {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent-red), var(--accent-green));
+            border-radius: 10px;
+            transition: width 0.5s ease;
+        }
+
+        .hp-text {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+            margin-top: 0.3rem;
+            text-align: right;
+        }
+
+        .player-status {
+            display: inline-block;
+            font-size: 0.7rem;
+            padding: 0.15rem 0.5rem;
+            border-radius: 10px;
+            margin-top: 0.4rem;
+            background: rgba(39, 174, 96, 0.15);
+            color: var(--accent-green);
+            border: 1px solid rgba(39, 174, 96, 0.3);
+        }
+
+        .player-status.thinking {
+            background: rgba(212, 175, 55, 0.15);
+            color: var(--accent-gold);
+            border-color: rgba(212, 175, 55, 0.3);
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        /* Center Panel - Main Story */
+        .panel-center {
+            display: flex;
+            flex-direction: column;
+            background: var(--bg-primary);
+            overflow: hidden;
+        }
+
+        .story-feed {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1.5rem 2rem;
+            scroll-behavior: smooth;
+        }
+
+        .story-feed::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .story-feed::-webkit-scrollbar-track {
+            background: var(--bg-primary);
+        }
+
+        .story-feed::-webkit-scrollbar-thumb {
+            background: var(--border-color);
+            border-radius: 3px;
+        }
+
+        .event-card {
+            margin-bottom: 1.2rem;
+            animation: fadeInUp 0.4s ease;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Narration Style */
+        .event-narration {
+            background: linear-gradient(135deg, rgba(26, 34, 62, 0.8), rgba(15, 52, 96, 0.5));
+            border: 1px solid var(--border-gold);
+            border-left: 4px solid var(--accent-gold);
+            border-radius: 8px;
+            padding: 1.2rem 1.5rem;
+        }
+
+        .event-narration .event-label {
+            font-family: 'Cinzel', serif;
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--accent-gold);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-bottom: 0.5rem;
+        }
+
+        .event-narration .event-text {
+            font-size: 1.1rem;
+            line-height: 1.7;
+            color: var(--text-narration);
+        }
+
+        /* Player Action Style */
+        .event-player-action {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-left: 4px solid var(--accent-blue);
+            border-radius: 8px;
+            padding: 1rem 1.2rem;
+        }
+
+        .event-player-action .event-label {
+            font-family: 'Cinzel', serif;
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--accent-blue);
+            letter-spacing: 1px;
+            margin-bottom: 0.4rem;
+        }
+
+        .event-player-action .event-text {
+            font-size: 1rem;
+            line-height: 1.6;
+            color: var(--text-primary);
+        }
+
+        /* System Event */
+        .event-system {
+            text-align: center;
+            padding: 0.6rem;
+        }
+
+        .event-system .event-text {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            background: rgba(255, 255, 255, 0.03);
+            display: inline-block;
+            padding: 0.3rem 1rem;
+            border-radius: 20px;
+            border: 1px solid var(--border-color);
+        }
+
+        /* Round Divider */
+        .event-round {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 0.8rem 0;
+        }
+
+        .event-round::before,
+        .event-round::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--accent-gold-dim), transparent);
+        }
+
+        .event-round .round-label {
+            font-family: 'Cinzel', serif;
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: var(--accent-gold);
+            letter-spacing: 2px;
+            white-space: nowrap;
+        }
+
+        /* Right Panel - Agent Log */
+        .panel-right {
+            background: var(--bg-secondary);
+            border-left: 1px solid var(--border-color);
+            padding: 1.2rem;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .agent-log {
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .agent-log::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .agent-log::-webkit-scrollbar-thumb {
+            background: var(--border-color);
+            border-radius: 2px;
+        }
+
+        .agent-entry {
+            margin-bottom: 0.8rem;
+            padding: 0.8rem;
+            background: var(--bg-card);
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+            animation: fadeInUp 0.3s ease;
+        }
+
+        .agent-entry .agent-name {
+            font-family: 'Cinzel', serif;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 0.3rem;
+        }
+
+        .agent-entry .agent-name.memory-keeper {
+            color: var(--accent-purple);
+        }
+
+        .agent-entry .agent-name.arbiter {
+            color: var(--accent-red);
+        }
+
+        .agent-entry .agent-message {
+            font-size: 0.85rem;
+            line-height: 1.5;
+            color: var(--text-secondary);
+            max-height: 120px;
+            overflow-y: auto;
+        }
+
+        .phase-indicator {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 0.7rem;
+            margin-bottom: 0.5rem;
+            border-radius: 4px;
+            background: rgba(212, 175, 55, 0.05);
+            border: 1px solid rgba(212, 175, 55, 0.15);
+            animation: pulse 2s infinite;
+        }
+
+        .phase-indicator .phase-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--accent-gold);
+            animation: pulse 1s infinite;
+        }
+
+        .phase-indicator .phase-text {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem;
+            color: var(--accent-gold);
+        }
+
+        /* Welcome Screen */
+        .welcome-screen {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            text-align: center;
+            padding: 2rem;
+        }
+
+        .welcome-screen h2 {
+            font-family: 'Cinzel', serif;
+            font-size: 2.5rem;
+            font-weight: 900;
+            color: var(--accent-gold);
+            margin-bottom: 0.5rem;
+            text-shadow: 0 0 30px rgba(212, 175, 55, 0.2);
+        }
+
+        .welcome-screen p {
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+            max-width: 400px;
+            line-height: 1.6;
+        }
+
+        .welcome-screen .dice-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            opacity: 0.6;
+        }
+
+        /* Game Over */
+        .event-game-over {
+            text-align: center;
+            padding: 2rem;
+            background: linear-gradient(135deg, rgba(212, 175, 55, 0.1), rgba(142, 68, 173, 0.1));
+            border: 2px solid var(--accent-gold);
+            border-radius: 12px;
+        }
+
+        .event-game-over .event-text {
+            font-family: 'Cinzel', serif;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--accent-gold);
+        }
+
+        /* Connection Status */
+        .connection-status {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+        }
+
+        .connection-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--accent-red);
+            transition: background 0.3s ease;
+        }
+
+        .connection-dot.connected {
+            background: var(--accent-green);
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>AutoQuest</h1>
+        <div class="header-controls">
+            <div class="connection-status">
+                <div class="connection-dot" id="connectionDot"></div>
+                <span id="connectionText">Disconnected</span>
+            </div>
+            <div class="round-badge" id="roundBadge">Waiting...</div>
+            <button class="btn-start" id="btnStart" onclick="startGame()">Start Campaign</button>
+        </div>
+    </div>
+
+    <div class="main-container">
+        <!-- Left: Player Cards -->
+        <div class="panel-left">
+            <div class="panel-title">Adventurers</div>
+            <div id="playerCards">
+                <p style="color: var(--text-secondary); font-size: 0.9rem; font-style: italic;">
+                    Players will appear when the campaign starts...
+                </p>
+            </div>
+        </div>
+
+        <!-- Center: Story Feed -->
+        <div class="panel-center">
+            <div class="story-feed" id="storyFeed">
+                <div class="welcome-screen" id="welcomeScreen">
+                    <div class="dice-icon">&#9860;</div>
+                    <h2>AutoQuest</h2>
+                    <p>Press <strong>Start Campaign</strong> to begin the adventure. Watch as AI agents roleplay through a D&D campaign in real-time.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right: Agent Pipeline Log -->
+        <div class="panel-right">
+            <div class="panel-title">GM Pipeline</div>
+            <div class="agent-log" id="agentLog">
+                <p style="color: var(--text-secondary); font-size: 0.85rem; font-style: italic;">
+                    Agent communications will appear here...
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const socket = io();
+        let gameStarted = false;
+
+        // Connection handling
+        socket.on('connect', () => {
+            document.getElementById('connectionDot').classList.add('connected');
+            document.getElementById('connectionText').textContent = 'Connected';
+        });
+
+        socket.on('disconnect', () => {
+            document.getElementById('connectionDot').classList.remove('connected');
+            document.getElementById('connectionText').textContent = 'Disconnected';
+        });
+
+        function startGame() {
+            if (gameStarted) return;
+            gameStarted = true;
+            document.getElementById('btnStart').disabled = true;
+            document.getElementById('btnStart').textContent = 'Running...';
+            document.getElementById('welcomeScreen').style.display = 'none';
+            socket.emit('start_game');
+        }
+
+        // Handle game events
+        socket.on('game_event', (data) => {
+            switch (data.type) {
+                case 'player_info':
+                    renderPlayerCard(data);
+                    break;
+                case 'system':
+                    appendStoryEvent('system', data.message);
+                    break;
+                case 'narration':
+                    appendStoryEvent('narration', data.message);
+                    break;
+                case 'player_thinking':
+                    setPlayerStatus(data.name, 'thinking');
+                    break;
+                case 'player_action':
+                    setPlayerStatus(data.name, 'acted');
+                    updatePlayerHP(data.name, data.hp, data.max_hp);
+                    appendStoryEvent('player_action', data.action, data.name);
+                    break;
+                case 'phase':
+                    showPhaseIndicator(data.message);
+                    break;
+                case 'gm_agent':
+                    appendAgentEntry(data.agent, data.message);
+                    clearPhaseIndicator();
+                    break;
+                case 'round_start':
+                    appendRoundDivider(data.round);
+                    document.getElementById('roundBadge').textContent = `Round ${data.round}`;
+                    break;
+                case 'round_end':
+                    resetPlayerStatuses();
+                    break;
+                case 'game_over':
+                    appendStoryEvent('game_over', data.message);
+                    document.getElementById('btnStart').textContent = 'Campaign Over';
+                    document.getElementById('roundBadge').textContent = 'Finished';
+                    break;
+            }
+        });
+
+        // Render functions
+        function renderPlayerCard(data) {
+            const container = document.getElementById('playerCards');
+            // Remove placeholder text on first player
+            if (container.querySelector('p')) {
+                container.innerHTML = '';
+            }
+
+            const card = document.createElement('div');
+            card.className = 'player-card';
+            card.id = `player-${data.name}`;
+            card.innerHTML = `
+                <div class="player-name">${data.name}</div>
+                <div class="player-meta">${data.race} ${data.class}</div>
+                <div class="player-personality">"${data.personality}"</div>
+                <div class="hp-bar-container">
+                    <div class="hp-bar" id="hp-bar-${data.name}" style="width: 100%"></div>
+                </div>
+                <div class="hp-text" id="hp-text-${data.name}">${data.hp} / ${data.max_hp} HP</div>
+                <div class="player-status" id="status-${data.name}">Ready</div>
+            `;
+            container.appendChild(card);
+        }
+
+        function setPlayerStatus(name, status) {
+            const statusEl = document.getElementById(`status-${name}`);
+            const cardEl = document.getElementById(`player-${name}`);
+            if (!statusEl || !cardEl) return;
+
+            if (status === 'thinking') {
+                statusEl.textContent = 'Thinking...';
+                statusEl.className = 'player-status thinking';
+                cardEl.classList.add('active');
+            } else if (status === 'acted') {
+                statusEl.textContent = 'Acted';
+                statusEl.className = 'player-status';
+                cardEl.classList.remove('active');
+            }
+        }
+
+        function resetPlayerStatuses() {
+            document.querySelectorAll('.player-status').forEach(el => {
+                el.textContent = 'Ready';
+                el.className = 'player-status';
+            });
+            document.querySelectorAll('.player-card').forEach(el => {
+                el.classList.remove('active');
+            });
+        }
+
+        function updatePlayerHP(name, hp, maxHp) {
+            const bar = document.getElementById(`hp-bar-${name}`);
+            const text = document.getElementById(`hp-text-${name}`);
+            if (!bar || !text) return;
+            const pct = Math.max(0, Math.min(100, (hp / maxHp) * 100));
+            bar.style.width = pct + '%';
+            text.textContent = `${hp} / ${maxHp} HP`;
+        }
+
+        function appendStoryEvent(type, text, playerName) {
+            const feed = document.getElementById('storyFeed');
+            const card = document.createElement('div');
+            card.className = 'event-card';
+
+            if (type === 'narration') {
+                card.innerHTML = `
+                    <div class="event-narration">
+                        <div class="event-label">&#9876; Narrator</div>
+                        <div class="event-text">${escapeHtml(text)}</div>
+                    </div>
+                `;
+            } else if (type === 'player_action') {
+                card.innerHTML = `
+                    <div class="event-player-action">
+                        <div class="event-label">&#9876; ${escapeHtml(playerName)}</div>
+                        <div class="event-text">${escapeHtml(text)}</div>
+                    </div>
+                `;
+            } else if (type === 'system') {
+                card.innerHTML = `
+                    <div class="event-system">
+                        <div class="event-text">${escapeHtml(text)}</div>
+                    </div>
+                `;
+            } else if (type === 'game_over') {
+                card.innerHTML = `
+                    <div class="event-game-over">
+                        <div class="event-text">${escapeHtml(text)}</div>
+                    </div>
+                `;
+            }
+
+            feed.appendChild(card);
+            feed.scrollTop = feed.scrollHeight;
+        }
+
+        function appendRoundDivider(round) {
+            const feed = document.getElementById('storyFeed');
+            const card = document.createElement('div');
+            card.className = 'event-card event-round';
+            card.innerHTML = `<span class="round-label">Round ${round}</span>`;
+            feed.appendChild(card);
+            feed.scrollTop = feed.scrollHeight;
+        }
+
+        function showPhaseIndicator(message) {
+            const log = document.getElementById('agentLog');
+            // Remove existing phase indicator
+            clearPhaseIndicator();
+            const indicator = document.createElement('div');
+            indicator.className = 'phase-indicator';
+            indicator.id = 'currentPhase';
+            indicator.innerHTML = `
+                <div class="phase-dot"></div>
+                <div class="phase-text">${escapeHtml(message)}</div>
+            `;
+            log.appendChild(indicator);
+            log.scrollTop = log.scrollHeight;
+        }
+
+        function clearPhaseIndicator() {
+            const existing = document.getElementById('currentPhase');
+            if (existing) existing.remove();
+        }
+
+        function appendAgentEntry(agent, message) {
+            const log = document.getElementById('agentLog');
+            // Remove placeholder on first entry
+            if (log.querySelector('p')) {
+                log.querySelector('p').remove();
+            }
+
+            const entry = document.createElement('div');
+            entry.className = 'agent-entry';
+            const agentClass = agent.toLowerCase().replace(' ', '-');
+            entry.innerHTML = `
+                <div class="agent-name ${agentClass}">${escapeHtml(agent)}</div>
+                <div class="agent-message">${escapeHtml(message)}</div>
+            `;
+            log.appendChild(entry);
+            log.scrollTop = log.scrollHeight;
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+    </script>
+</body>
+</html>
