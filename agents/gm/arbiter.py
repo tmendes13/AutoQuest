@@ -13,7 +13,7 @@ If the entry passes, its label is flipped to validated.
 If it fails, the entry is removed from the memory file.
 """
 
-from config import client, types, MODEL
+from config import client, types, MODEL, send_chat_message
 from agents.gm import memory_store
 
 
@@ -104,7 +104,7 @@ def arbitrate(arbiter_chat, memory_path: str, entry_id: str) -> tuple[bool, str]
         f"[{candidate['author']}] {candidate['content']}\n\n"
         "Decide if the candidate is consistent with the validated facts."
     )
-    response = arbiter_chat.send_message(prompt)
+    response = send_chat_message(arbiter_chat, prompt, remember=False)
     is_valid = _parse_decision(response.text)
     if is_valid:
         memory_store.mark_validated(memory_path, entry_id)

@@ -5,7 +5,7 @@ next part of the story. The narrator never reads not-validated entries: only
 already-arbitrated facts can influence the narrative.
 """
 
-from config import client, types, MODEL
+from config import client, types, MODEL, send_chat_message
 from agents.gm import memory_store
 
 
@@ -44,10 +44,12 @@ def start_campaign(narrator_chat) -> str:
 def narrate(narrator_chat, memory_path: str) -> str:
     """Continue the story based on the current validated memory."""
     validated = memory_store.format_validated(memory_path)
-    response = narrator_chat.send_message(
+    response = send_chat_message(
+        narrator_chat,
         "Here are the validated facts of the world (most recent at the bottom):\n"
         f"{validated}\n\n"
         "Narrate the result of the latest player action(s) and describe the "
-        "new situation. Stay consistent with the validated facts."
+        "new situation. Stay consistent with the validated facts.",
+        remember=False,
     )
     return response.text.strip()

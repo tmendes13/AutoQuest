@@ -32,7 +32,12 @@ from dataclasses import dataclass
 
 from agents.gm import memory_store
 from agents.gm.arbiter import setup_arbiter, arbitrate
-from agents.gm.memory_keeper import setup_mem_keeper, mem_keep
+from agents.gm.memory_keeper import (
+    setup_mem_keeper,
+    mem_keep,
+    should_condense,
+    condense_memory,
+)
 from agents.gm.narrator import setup_narrator, start_campaign, narrate
 from agents.party import deliberate
 from models.player import Player
@@ -99,8 +104,14 @@ def begin_campaign(gm: GameMaster) -> str:
     entry_id = mem_keep(
         gm.mk_chat, gm.memory_path, author="narrator", raw_text=opening
     )
-    memory_store.mark_validated(gm.memory_path, entry_id)
+    if entry_id is not None:
+        memory_store.mark_validated(gm.memory_path, entry_id)
     return opening
+
+
+def _maybe_condense_memory(gm: GameMaster) -> None:
+    if should_condense(gm.memory_path):
+        condense_memory(gm.mk_chat, gm.memory_path)
 
 
 def _ingest_with_arbitration(
@@ -117,9 +128,13 @@ def _ingest_with_arbitration(
     entry_id = mem_keep(
         gm.mk_chat, gm.memory_path, author=author, raw_text=raw_text
     )
+    if entry_id is None:
+        return True, "No new durable facts to validate."
     is_valid, arbiter_text = arbitrate(
         gm.arbiter_chat, gm.memory_path, entry_id
     )
+    if is_valid:
+        _maybe_condense_memory(gm)
     if not is_valid:
         # Defensive: arbitrate already deleted the candidate, but make sure
         # no other not-validated entries are left lying around.
