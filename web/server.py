@@ -7,11 +7,20 @@ from flask_socketio import SocketIO, emit
 import threading
 import time
 
+from agents.gm.narrator import setup_narrator, start_campaign, narrate
+from agents.gm.memory_keeper import setup_mem_keeper, mem_keep
+from agents.gm.arbiter import setup_arbiter, arbitrate
+from agents.player import setup_agent, act
+from models.player import Player
+from models.dnd_class import Class
+from agents.gm import memory_store
+
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'autoquest-secret'
 socketio = SocketIO(app, cors_allowed_origins="*", async_mode='threading')
 
 game_running = False
+MEMORY_PATH = "web_memory.json"
 
 def emit_event(event_type, data):
     """Emit a game event to the frontend via WebSocket."""
@@ -23,12 +32,7 @@ def run_game():
     global game_running
     game_running = True
 
-    from agents.gm.narrator import setup_narrator, start_campaign, narrate
-    from agents.gm.memory_keeper import setup_mem_keeper, mem_keep
-    from agents.gm.arbiter import setup_arbiter, decide
-    from agents.player import setup_agent, act
-    from models.player import Player
-    from models.dnd_class import Class
+    memory_store.init_memory(MEMORY_PATH)
 
     thorin = Player(name="Thorin", race="Dwarf", dnd_class=Class("Warrior", 10), personality="Brave and impulsive", max_hp=40)
     aelindra = Player(name="Aelindra", race="Elf", dnd_class=Class("Mage", 6), personality="Curious and calculative", max_hp=25)
@@ -59,6 +63,9 @@ def run_game():
     emit_event('system', {'message': 'Campaign starting...'})
 
     situation = start_campaign(narrator_chat)
+    entry_id = mem_keep(mem_keeper_chat, MEMORY_PATH, "narrator", situation)
+    if entry_id is not None:
+        memory_store.mark_validated(MEMORY_PATH, entry_id)
     emit_event('narration', {'message': situation})
 
     # Game loop
@@ -77,17 +84,31 @@ def run_game():
             })
             actions.append(f"{player.name}: {response}")
 
+        raw_actions = "\n".join(actions)
+
         emit_event('phase', {'phase': 'memory_keeper', 'message': 'Memory Keeper is recording events...'})
-        memory = mem_keep(mem_keeper_chat, actions)
-        emit_event('gm_agent', {'agent': 'Memory Keeper', 'message': memory})
+        entry_id = mem_keep(mem_keeper_chat, MEMORY_PATH, "party", raw_actions)
+        if entry_id is not None:
+            memory_entry = memory_store.get_entry(MEMORY_PATH, entry_id)
+            emit_event('gm_agent', {'agent': 'Memory Keeper', 'message': memory_entry['content']})
 
-        emit_event('phase', {'phase': 'arbiter', 'message': 'Arbiter is evaluating actions...'})
-        decision = decide(arbiter_chat, memory)
-        emit_event('gm_agent', {'agent': 'Arbiter', 'message': decision})
+            emit_event('phase', {'phase': 'arbiter', 'message': 'Arbiter is evaluating actions...'})
+            is_valid, arbiter_text = arbitrate(arbiter_chat, MEMORY_PATH, entry_id)
+            emit_event('gm_agent', {'agent': 'Arbiter', 'message': arbiter_text})
+        else:
+            emit_event('gm_agent', {'agent': 'Memory Keeper', 'message': 'No relevant facts to record.'})
+            is_valid = True
 
-        emit_event('phase', {'phase': 'narrator', 'message': 'Narrator is crafting the story...'})
-        situation = narrate(narrator_chat, memory)
-        emit_event('narration', {'message': situation})
+        if is_valid:
+            emit_event('phase', {'phase': 'narrator', 'message': 'Narrator is crafting the story...'})
+            situation = narrate(narrator_chat, MEMORY_PATH)
+            emit_event('narration', {'message': situation})
+
+            entry_id = mem_keep(mem_keeper_chat, MEMORY_PATH, "narrator", situation)
+            if entry_id is not None:
+                arbitrate(arbiter_chat, MEMORY_PATH, entry_id)
+        else:
+            emit_event('system', {'message': 'Party actions were rejected by the Arbiter.'})
 
         emit_event('round_end', {'round': round_num + 1})
 
