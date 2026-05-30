@@ -17,6 +17,7 @@ class Player:
     weapon: Optional[Item] = None
     armor: Optional[Item] = None
     chat: object = field(init=False, default=None)
+    diary: str = ""
 
     def __post_init__(self):
         self.current_hp = self.max_hp

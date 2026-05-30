@@ -1,0 +1,42 @@
+{
+  "entries": [
+    {
+      "id": "f8167405",
+      "validated": true,
+      "author": "narrator",
+      "content": "LOCATION: Morilthorn city, crumbling with ruined arches and aghast villagers. \nMARKET_STATUS: shattered marketplace, vendors slumped or screaming. \nBLAZE: flames singed on exterior of market. \nBLAZE_SOURCE: blue fire brazier in market burning same candle each moonless night. \nRIVER_VOICE: spectral echo rises from damp moonlit canal every few weeks. \nDEMON_PRESENT: blackened mask \"Lurker\" manifested in heart of market, devours flesh and turns eyes into burning shards. \nTEMPORAL_NOTE: Lurker appears in the present moment.",
+      "kind": "event"
+    },
+    {
+      "id": "532f382e",
+      "validated": true,
+      "author": "party",
+      "content": "Lurker still alive in market square, slightly wounded, its flame sigil scattered into embers.  \nBlue fire at brazier exhibits greenish flicker when touched by Aelindra’s Silent Conduit energy sheet.  \nAelindra has manifested a Silent Conduit sheet extending from her chest to the Lurker’s mask.  \nAelindra has erected an eight‑square Barrier of Reflection around her, occupying seven squares in the collapsed stalls.  \nThorin remains in the center of the market square, holding a fallen merchant’s hammer and a goblet used as a torch.  \nThorin lacks any shield or sword; his hammer is the only weapon in his possession.  \nThe Lurker’s mask appears blackened basalt with slick blood residue and a hen‑hair‑flame sigil.  \nMarket vendors are scattered and panicked; the market square remains chaotic.",
+      "kind": "event"
+    },
+    {
+      "id": "e3b0c377",
+      "validated": true,
+      "author": "narrator",
+      "content": "Location: market square, collapsed stalls, ruined arches.  \nStakeholder: Lurker demon, alive, wounds widening, destabilized, eye glowing.  \nStakeholder: Thorin, holds fallen merchant’s hammer, uses it to attack Lurker.  \nStakeholder: Aelindra, using Silent Conduit sheet to thread fire into Lurker’s mask, fracturing sigil into shards.  \nStakeholder: Vendors, scattered, cries echo off arches.  \nAmbient: shrill canal voice whispering uneasy promise nearby.  \nObject: merchant's hammer, now in Thorin’s possession.  \nEvent: Lurker’s eye flashes one last gleaming glow.",
+      "kind": "event"
+    },
+    {
+      "id": "90952460",
+      "validated": true,
+      "author": "party",
+      "content": "Location: Morilthorn market square, collapsed stalls, near canal mouth.  \nThorin currently holds a hammer and is poised for another strike.  \nAelindra currently holds a Silent Conduit shield and has cast Telara‑Net, River‑Lure, and Vault‑Spark.  \nDemonstrated demon (Lurker) present, its eye damaged and glowing ember visible.  \nTelara‑Net binding braid is active, restricting demon's movement to a 4‑square radius and limiting eye vision; lasts until demon's alignment changes.  \nRiver‑Lure sonic ripple is active, pulling the demon toward the canal’s edge for 5 turns; range 30 squares.  \nVault‑Spark was cast, dealing 2d8 fire damage to the demon's eye; the eye flashes and disappears, forcing remaining power into the braid for one turn.  \nThe demon is currently constrained near the canal mouth, pulled by the river lure and bound by the braid.  \nThe surrounding market stalls remain collapsed but stable enough to support a crowd that is currently a few yards from the demon.  \nAn estimated 2–4 turns remain before the demon may attempt to escape the binding; during this time, the demon cannot jump or break free from the net.",
+      "kind": "event"
+    },
+    {
+      "id": "e42a7ed7",
+      "validated": true,
+      "author": "narrator",
+      "content": "Lurker demon is present in the market ruins above ruined arches.  \nThorin has struck the Lurker’s hide with his hammer, producing green‑tinged blue fire sparks.  \nLurker’s eye is now a smoldering ember, soon to flicker into darkness.  \nTelara‑Net is tightening around the Lurker’s limbs; only two turns remain before the net can tilt or break.  \nRiver‑Lure is pulling the demon toward the murky mouth of the canal.  \nAelindra’s shield glows brighter, channeling residual fire into the demon’s core and sears a jagged seam through its membrane.  \nSpectral canal voice is whispering hints of bargains.  \nA crowd of onlookers is present, watching the confrontation.",
+      "kind": "event"
+    }
+  ],
+  "metadata": {
+    "validated_since_condense": 5
+  }
+}

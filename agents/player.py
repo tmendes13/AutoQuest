@@ -47,11 +47,13 @@ def propose(player: Player, gm_message: str, validated_facts: str) -> str:
     The player sees ONLY the GM message and the validated memory; they do
     not yet know what their party members will propose.
     """
+    diary_str = f"Your private diary and secret thoughts:\n{player.diary}\n\n" if getattr(player, "diary", None) else ""
     context = (
         "The Game Master says:\n"
         f"{gm_message}\n\n"
         "Validated facts about the world (your shared memory, read-only):\n"
         f"{validated_facts}\n\n"
+        f"{diary_str}"
         f"Your status: {player.status()}\n\n"
         "Propose ONE concrete action you would take. "
         "Stay strictly consistent with the validated facts; only use items, "
@@ -74,6 +76,7 @@ def synthesize(
     open the discussion. The starter is allowed (and encouraged) to pick
     one player's idea, mix elements, or propose a small twist.
     """
+    diary_str = f"Your private diary and secret thoughts:\n{player.diary}\n\n" if getattr(player, "diary", None) else ""
     context = (
         "The Game Master says:\n"
         f"{gm_message}\n\n"
@@ -81,6 +84,7 @@ def synthesize(
         f"{validated_facts}\n\n"
         "Your party's individual proposals:\n"
         f"{proposals_block}\n\n"
+        f"{diary_str}"
         "You have been picked to OPEN the party discussion. "
         "Pick the best idea, combine elements, or propose a small twist "
         "that helps the group. Output ONE single proposal in the first "
@@ -102,11 +106,13 @@ def review(
     :data:`APPROVE` or :data:`MODIFY`. When the verdict is APPROVE, the
     second element is the empty string.
     """
+    diary_str = f"Your private diary and secret thoughts:\n{player.diary}\n\n" if getattr(player, "diary", None) else ""
     context = (
         "The Game Master says:\n"
         f"{gm_message}\n\n"
         "Validated facts about the world (read-only):\n"
         f"{validated_facts}\n\n"
+        f"{diary_str}"
         f"Your status: {player.status()}\n\n"
         "The current group proposal is:\n"
         f"{current_proposal}\n\n"
@@ -123,6 +129,32 @@ def review(
     )
     raw = send_chat_message(player.chat, context, remember=False).text.strip()
     return _parse_review(raw)
+
+
+def reflect(player: Player, latest_situation: str, validated_facts: str) -> None:
+    """Update the player's private thoughts based on the latest event.
+
+    This keeps their personal diary constant in size by rewriting/consolidating it.
+    """
+    current_thoughts = player.diary if getattr(player, "diary", None) else "Nenhum pensamento anterior."
+    context = (
+        "You are playing as the character described in your system prompt. "
+        "Update your private diary (personal thoughts) based on the latest event.\n\n"
+        "Your previous thoughts:\n"
+        f"{current_thoughts}\n\n"
+        "Latest event in the world:\n"
+        f"{latest_situation}\n\n"
+        "Validated world facts:\n"
+        f"{validated_facts}\n\n"
+        "Rewrite your private thoughts. Consolidate them into exactly 1 to 3 very short, "
+        "terse bullet points (in first person, keeping the same language as the context). "
+        "Focus on your immediate worries, plans, or how you feel about your companion(s) "
+        "according to your personality. "
+        "Keep it extremely concise. Output bullet points only, no commentary, markdown or headers."
+    )
+    response = send_chat_message(player.chat, context, remember=False)
+    player.diary = response.text.strip()
+    print(f"  [{player.name}'s Secret Thoughts]:\n  {player.diary}")
 
 
 def _parse_review(text: str) -> tuple[str, str]:

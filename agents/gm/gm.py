@@ -41,6 +41,7 @@ from agents.gm.memory_keeper import (
 from agents.gm.narrator import setup_narrator, start_campaign, narrate
 from agents.party import deliberate
 from models.player import Player
+from agents.player import reflect
 
 
 MAX_RETRIES = 3
@@ -189,6 +190,10 @@ def run_turn(gm: GameMaster, party: list[Player], situation: str) -> str:
         )
         if is_valid:
             print(f"[Arbiter] Narration accepted. {arbiter_text.strip()}")
+            # Run reflections for players before returning
+            validated_facts = memory_store.format_validated(gm.memory_path)
+            for p in party:
+                reflect(p, narration, validated_facts)
             return narration
         print(f"[Arbiter] Narration REJECTED. {arbiter_text.strip()}")
 

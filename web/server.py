@@ -10,7 +10,7 @@ import time
 from agents.gm.narrator import setup_narrator, start_campaign, narrate
 from agents.gm.memory_keeper import setup_mem_keeper, mem_keep, condense_memory
 from agents.gm.arbiter import setup_arbiter, arbitrate
-from agents.player import setup_agent, act
+from agents.player import setup_agent, act, reflect
 from models.player import Player
 from models.dnd_class import Class
 from agents.gm import memory_store
@@ -186,6 +186,14 @@ def run_game():
             emit_event('game_over', {'message': 'Campaign Aborted.'})
             game_running = False
             return
+            
+        # ---- 3. Players reflect privately on the validated turn ------------
+        emit_event('phase', {'phase': 'players', 'message': 'Players are reflecting privately...'})
+        validated_facts = memory_store.format_validated(MEMORY_PATH)
+        for player in players:
+            reflect(player, narration, validated_facts)
+            emit_event('gm_agent', {'agent': f"{player.name}'s Diary", 'message': player.diary})
+            time.sleep(0.4)
             
         emit_event('narration', {'message': narration})
         situation = narration
