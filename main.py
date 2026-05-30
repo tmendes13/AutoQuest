@@ -49,6 +49,7 @@ def main():
 
     for p in party:
         p.chat = setup_agent(_player_system_prompt(p))
+        p.chat.agent_name = p.name
 
     # The GM resets the shared memory file, sets up Narrator, Memory Keeper
     # and Arbiter, and seeds the memory with the validated campaign opening.

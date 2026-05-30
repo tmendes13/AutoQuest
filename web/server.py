@@ -36,6 +36,10 @@ def run_game():
 
     memory_store.init_memory(MEMORY_PATH)
     init_diaries(MEMORY_PATH)
+    
+    # Initialize tokens tracking!
+    import config
+    config.init_tokens(MEMORY_PATH)
 
     thorin = Player(name="Thorin", race="Dwarf", dnd_class=Class("Warrior", 10), personality="Brave and impulsive", max_hp=40)
     aelindra = Player(name="Aelindra", race="Elf", dnd_class=Class("Mage", 6), personality="Curious and calculative", max_hp=25)
@@ -55,10 +59,16 @@ def run_game():
     # Setup agents with the complete _player_system_prompt
     for player in players:
         player.chat = setup_agent(_player_system_prompt(player))
+        player.chat.agent_name = player.name
 
     narrator_chat = setup_narrator()
     mem_keeper_chat = setup_mem_keeper()
     arbiter_chat = setup_arbiter()
+
+    # Set agent names!
+    narrator_chat.agent_name = "narrator"
+    mem_keeper_chat.agent_name = "memory_keeper"
+    arbiter_chat.agent_name = "arbiter"
 
     emit_event('system', {'message': 'Campaign starting...'})
 

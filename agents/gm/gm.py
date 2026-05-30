@@ -87,10 +87,24 @@ def setup_gm(memory_path: str = DEFAULT_MEMORY_PATH) -> GameMaster:
     """Create the three sub-agent chats and reset the shared memory file."""
     memory_store.init_memory(memory_path)
     init_diaries(memory_path)
+    
+    # Initialize tokens tracking!
+    import config
+    config.init_tokens(memory_path)
+    
+    narrator_chat = setup_narrator()
+    mk_chat = setup_mem_keeper()
+    arbiter_chat = setup_arbiter()
+    
+    # Set agent names!
+    narrator_chat.agent_name = "narrator"
+    mk_chat.agent_name = "memory_keeper"
+    arbiter_chat.agent_name = "arbiter"
+    
     return GameMaster(
-        narrator_chat=setup_narrator(),
-        mk_chat=setup_mem_keeper(),
-        arbiter_chat=setup_arbiter(),
+        narrator_chat=narrator_chat,
+        mk_chat=mk_chat,
+        arbiter_chat=arbiter_chat,
         memory_path=memory_path,
     )
 
