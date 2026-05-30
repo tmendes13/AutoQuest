@@ -22,6 +22,10 @@ from typing import Optional
 
 def init_memory(path: str) -> None:
     """Create or reset the memory file at the given path."""
+    import os
+    parent = os.path.dirname(path)
+    if parent:
+        os.makedirs(parent, exist_ok=True)
     with open(path, "w", encoding="utf-8") as f:
         json.dump(
             {"entries": [], "metadata": {"validated_since_condense": 0}},

@@ -45,7 +45,7 @@ from agents.player import reflect, init_diaries, save_diaries
 
 
 MAX_RETRIES = 3
-DEFAULT_MEMORY_PATH = "memory.json"
+DEFAULT_MEMORY_PATH = "memory/memory.json"
 
 
 class GMRetriesExhaustedError(RuntimeError):
