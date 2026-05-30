@@ -16,6 +16,8 @@ Keeper writes.
                    modification slots in :mod:`agents.party`).
 """
 
+import os
+import json
 from models.player import Player
 from config import client, types, MODEL, send_chat_message
 
@@ -203,3 +205,42 @@ def _parse_review(text: str) -> tuple[str, str]:
     if not proposal:
         return APPROVE, ""
     return MODIFY, proposal
+
+
+def get_diary_path(memory_path: str) -> str:
+    """Derive the diary path from the campaign memory path."""
+    base, ext = os.path.splitext(memory_path)
+    return f"{base}_diaries.json"
+
+
+def init_diaries(memory_path: str) -> None:
+    """Reset the player diaries JSON file."""
+    diary_path = get_diary_path(memory_path)
+    if os.path.exists(diary_path):
+        try:
+            os.remove(diary_path)
+        except OSError:
+            pass
+
+
+def save_diaries(memory_path: str, party: list[Player]) -> None:
+    """Save the current private diaries of all party members to disk."""
+    diary_path = get_diary_path(memory_path)
+    data = {p.name: p.diary for p in party}
+    with open(diary_path, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
+
+
+def load_diaries(memory_path: str, party: list[Player]) -> None:
+    """Load the private diaries of all party members from disk (if the file exists)."""
+    diary_path = get_diary_path(memory_path)
+    if not os.path.exists(diary_path):
+        return
+    try:
+        with open(diary_path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        for p in party:
+            if p.name in data:
+                p.diary = data[p.name]
+    except (json.JSONDecodeError, KeyError, OSError):
+        pass

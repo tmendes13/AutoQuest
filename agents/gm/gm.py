@@ -41,7 +41,7 @@ from agents.gm.memory_keeper import (
 from agents.gm.narrator import setup_narrator, start_campaign, narrate
 from agents.party import deliberate
 from models.player import Player
-from agents.player import reflect
+from agents.player import reflect, init_diaries, save_diaries
 
 
 MAX_RETRIES = 3
@@ -86,6 +86,7 @@ class GameMaster:
 def setup_gm(memory_path: str = DEFAULT_MEMORY_PATH) -> GameMaster:
     """Create the three sub-agent chats and reset the shared memory file."""
     memory_store.init_memory(memory_path)
+    init_diaries(memory_path)
     return GameMaster(
         narrator_chat=setup_narrator(),
         mk_chat=setup_mem_keeper(),
@@ -194,6 +195,7 @@ def run_turn(gm: GameMaster, party: list[Player], situation: str) -> str:
             validated_facts = memory_store.format_validated(gm.memory_path)
             for p in party:
                 reflect(p, narration, validated_facts)
+            save_diaries(gm.memory_path, party)
             return narration
         print(f"[Arbiter] Narration REJECTED. {arbiter_text.strip()}")
 

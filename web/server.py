@@ -10,7 +10,7 @@ import time
 from agents.gm.narrator import setup_narrator, start_campaign, narrate
 from agents.gm.memory_keeper import setup_mem_keeper, mem_keep, condense_memory
 from agents.gm.arbiter import setup_arbiter, arbitrate
-from agents.player import setup_agent, act, reflect
+from agents.player import setup_agent, act, reflect, init_diaries, save_diaries
 from models.player import Player
 from models.dnd_class import Class
 from agents.gm import memory_store
@@ -35,6 +35,7 @@ def run_game():
     game_running = True
 
     memory_store.init_memory(MEMORY_PATH)
+    init_diaries(MEMORY_PATH)
 
     thorin = Player(name="Thorin", race="Dwarf", dnd_class=Class("Warrior", 10), personality="Brave and impulsive", max_hp=40)
     aelindra = Player(name="Aelindra", race="Elf", dnd_class=Class("Mage", 6), personality="Curious and calculative", max_hp=25)
@@ -194,6 +195,7 @@ def run_game():
             reflect(player, narration, validated_facts)
             emit_event('gm_agent', {'agent': f"{player.name}'s Diary", 'message': player.diary})
             time.sleep(0.4)
+        save_diaries(MEMORY_PATH, players)
             
         emit_event('narration', {'message': narration})
         situation = narration
