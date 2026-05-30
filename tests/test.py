@@ -3,7 +3,7 @@ from models.dnd_class import Class
 from models.player import Player
 
 # Criar objetos de teste
-espada = Item(name="Espada Longa", descripion="Uma espada afiada", damage="1d8")
+espada = Item(name="Espada Longa", description="Uma espada afiada", damage="1d8")
 guerreiro_class = Class(name="Guerreiro", hit_die=10)
 
 # Testar Player

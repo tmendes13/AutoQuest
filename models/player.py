@@ -22,8 +22,7 @@ class Player:
         self.current_hp = self.max_hp
 
     def is_alive(self):
-        if self.current_hp > 0:
-            return True
+        return self.current_hp > 0
 
     def heal(self, amount):
         self.current_hp += amount
@@ -47,5 +46,5 @@ class Player:
             f"HP: {self.current_hp}/{self.max_hp} | "
             #f"CA: {self.armor_class} | "
             f"Weapon: {weapon} | Armor: {armor} | "
-            f"Iventory: {items}"
+            f"Inventory: {items}"
         )

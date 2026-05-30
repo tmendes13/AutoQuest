@@ -9,7 +9,7 @@ from models.player import Player
 from models.dnd_class import Class
 
 
-NUM_ROUNDS = 5
+NUM_ROUNDS = 20
 
 
 def _player_system_prompt(p: Player) -> str:

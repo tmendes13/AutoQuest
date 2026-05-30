@@ -17,7 +17,7 @@ Keeper writes.
 """
 
 from models.player import Player
-from config import client, types, MODEL
+from config import client, types, MODEL, send_chat_message
 
 
 # Public verdict constants returned by :func:`review`.
@@ -37,7 +37,7 @@ def setup_agent(system_prompt: str):
 def act(player: Player, situation: str) -> str:
     """Legacy single-shot action. Kept for callers that don't deliberate."""
     context = f"Your status: {player.status()}\n\n Situation: {situation}\n\nWhat do you do?"
-    response = player.chat.send_message(context)
+    response = send_chat_message(player.chat, context, remember=False)
     return response.text
 
 
@@ -59,7 +59,7 @@ def propose(player: Player, gm_message: str, validated_facts: str) -> str:
         "Speak in the first person, 1 to 3 short sentences. "
         "Do not list multiple options."
     )
-    return player.chat.send_message(context).text.strip()
+    return send_chat_message(player.chat, context, remember=False).text.strip()
 
 
 def synthesize(
@@ -87,7 +87,7 @@ def synthesize(
         "person plural ('we ...') in 1 to 3 short sentences. "
         "Stay strictly consistent with the validated facts."
     )
-    return player.chat.send_message(context).text.strip()
+    return send_chat_message(player.chat, context, remember=False).text.strip()
 
 
 def review(
@@ -121,7 +121,7 @@ def review(
         "NEW_PROPOSAL: <the full updated proposal, 1 to 3 short sentences, "
         "first person plural>"
     )
-    raw = player.chat.send_message(context).text.strip()
+    raw = send_chat_message(player.chat, context, remember=False).text.strip()
     return _parse_review(raw)
 
 
