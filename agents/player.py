@@ -207,40 +207,46 @@ def _parse_review(text: str) -> tuple[str, str]:
     return MODIFY, proposal
 
 
-def get_diary_path(memory_path: str) -> str:
-    """Derive the diary path from the campaign memory path."""
+def get_player_diary_path(memory_path: str, player_name: str) -> str:
+    """Derive a player's individual diary path from the campaign memory path and player's name."""
     base, ext = os.path.splitext(memory_path)
-    return f"{base}_diaries.json"
+    # Sanitize the player name to avoid file system issues
+    safe_name = "".join(c for c in player_name if c.isalnum() or c in ("-", "_"))
+    return f"{base}_diary_{safe_name}.json"
 
 
 def init_diaries(memory_path: str) -> None:
-    """Reset the player diaries JSON file."""
-    diary_path = get_diary_path(memory_path)
-    if os.path.exists(diary_path):
+    """Reset the player diaries by deleting all individual diary files on disk."""
+    import glob
+    base, ext = os.path.splitext(memory_path)
+    # Delete all individual diary files that match the pattern
+    pattern = f"{base}_diary_*.json"
+    for path in glob.glob(pattern):
         try:
-            os.remove(diary_path)
+            os.remove(path)
         except OSError:
             pass
 
 
 def save_diaries(memory_path: str, party: list[Player]) -> None:
-    """Save the current private diaries of all party members to disk."""
-    diary_path = get_diary_path(memory_path)
-    data = {p.name: p.diary for p in party}
-    with open(diary_path, "w", encoding="utf-8") as f:
-        json.dump(data, f, ensure_ascii=False, indent=2)
+    """Save the current private diaries of all party members to their individual disk files."""
+    for p in party:
+        diary_path = get_player_diary_path(memory_path, p.name)
+        data = {"diary": p.diary}
+        with open(diary_path, "w", encoding="utf-8") as f:
+            json.dump(data, f, ensure_ascii=False, indent=2)
 
 
 def load_diaries(memory_path: str, party: list[Player]) -> None:
-    """Load the private diaries of all party members from disk (if the file exists)."""
-    diary_path = get_diary_path(memory_path)
-    if not os.path.exists(diary_path):
-        return
-    try:
-        with open(diary_path, "r", encoding="utf-8") as f:
-            data = json.load(f)
-        for p in party:
-            if p.name in data:
-                p.diary = data[p.name]
-    except (json.JSONDecodeError, KeyError, OSError):
-        pass
+    """Load the private diaries of all party members from their individual disk files."""
+    for p in party:
+        diary_path = get_player_diary_path(memory_path, p.name)
+        if not os.path.exists(diary_path):
+            continue
+        try:
+            with open(diary_path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            if "diary" in data:
+                p.diary = data["diary"]
+        except (json.JSONDecodeError, KeyError, OSError):
+            pass

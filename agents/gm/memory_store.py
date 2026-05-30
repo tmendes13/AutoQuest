@@ -30,6 +30,56 @@ def init_memory(path: str) -> None:
             indent=2,
         )
 
+    # Reset uncompressed file
+    import os
+    base, ext = os.path.splitext(path)
+    uncompressed_path = f"{base}_uncompressed.json"
+    if os.path.exists(uncompressed_path):
+        try:
+            os.remove(uncompressed_path)
+        except OSError:
+            pass
+    try:
+        with open(uncompressed_path, "w", encoding="utf-8") as f:
+            json.dump({"entries": []}, f, ensure_ascii=False, indent=2)
+    except OSError:
+        pass
+
+
+def _append_to_uncompressed(path: str, entry: dict) -> None:
+    """Temporarily append validated entries to an uncompressed backup file for comparison."""
+    import os
+    base, ext = os.path.splitext(path)
+    uncompressed_path = f"{base}_uncompressed.json"
+    
+    try:
+        if os.path.exists(uncompressed_path):
+            with open(uncompressed_path, "r", encoding="utf-8") as f:
+                uncompressed_data = json.load(f)
+        else:
+            uncompressed_data = {"entries": []}
+    except (json.JSONDecodeError, OSError):
+        uncompressed_data = {"entries": []}
+        
+    uncompressed_data.setdefault("entries", [])
+    
+    # Avoid duplicate appends if marked multiple times
+    exists = any(e["id"] == entry["id"] for e in uncompressed_data["entries"])
+    if not exists:
+        uncompressed_data["entries"].append({
+            "id": entry["id"],
+            "validated": True,
+            "author": entry["author"],
+            "content": entry["content"],
+            "kind": entry.get("kind", "event")
+        })
+        
+        try:
+            with open(uncompressed_path, "w", encoding="utf-8") as f:
+                json.dump(uncompressed_data, f, ensure_ascii=False, indent=2)
+        except OSError:
+            pass
+
 
 def _read(path: str) -> dict:
     with open(path, "r", encoding="utf-8") as f:
@@ -60,17 +110,17 @@ def append_entry(
     """Append a new entry to the memory file. Returns the entry id."""
     data = _read(path)
     entry_id = uuid.uuid4().hex[:8]
-    data["entries"].append(
-        {
-            "id": entry_id,
-            "validated": validated,
-            "author": author,
-            "content": content,
-            "kind": kind,
-        }
-    )
+    new_entry = {
+        "id": entry_id,
+        "validated": validated,
+        "author": author,
+        "content": content,
+        "kind": kind,
+    }
+    data["entries"].append(new_entry)
     if validated:
         data["metadata"]["validated_since_condense"] += 1
+        _append_to_uncompressed(path, new_entry)
     _write(path, data)
     return entry_id
 
@@ -84,6 +134,7 @@ def mark_validated(path: str, entry_id: str) -> None:
             entry["validated"] = True
             if not was_validated:
                 data["metadata"]["validated_since_condense"] += 1
+                _append_to_uncompressed(path, entry)
             break
     _write(path, data)
 
