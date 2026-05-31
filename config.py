@@ -4,8 +4,13 @@ import ollama
 import sys
 from dataclasses import dataclass
 
+_PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
+_LOGS_DIR = os.path.join(_PROJECT_ROOT, "logs")
+
 class ConsoleJsonLogger:
-    def __init__(self, original_stdout, log_path="logs/log.json"):
+    def __init__(self, original_stdout, log_path=None):
+        if log_path is None:
+            log_path = os.path.join(_LOGS_DIR, "log.json")
         self.original_stdout = original_stdout
         self.log_path = log_path
         self.buffer = []
@@ -38,7 +43,7 @@ class ConsoleJsonLogger:
 
 # Redirect stdout automatically upon import
 if not isinstance(sys.stdout, ConsoleJsonLogger):
-    sys.stdout = ConsoleJsonLogger(sys.stdout, "logs/log.json")
+    sys.stdout = ConsoleJsonLogger(sys.stdout)
 
 MODEL = "gpt-oss:20b-cloud"
 
@@ -46,7 +51,7 @@ TOKEN_PATH = None
 
 def get_token_path(memory_path: str) -> str:
     """Derive the tokens path in the logs/ directory from the campaign memory path."""
-    return os.path.join("logs", "tokens.json")
+    return os.path.join(_LOGS_DIR, "tokens.json")
 
 
 def init_tokens(memory_path: str) -> None:

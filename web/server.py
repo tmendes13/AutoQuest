@@ -24,7 +24,8 @@ app.config['SECRET_KEY'] = 'autoquest-secret'
 socketio = SocketIO(app, cors_allowed_origins="*", async_mode='threading')
 
 game_running = False
-MEMORY_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "memory", "memory.json")
+PROJECT_ROOT = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
+MEMORY_PATH = os.path.join(PROJECT_ROOT, "memory", "memory.json")
 
 def emit_event(event_type, data):
     """Emit a game event to the frontend via WebSocket."""
