@@ -36,9 +36,11 @@ def test_diary_segregation():
         )
         party = [thorin, aelindra]
 
-        # Set unique diaries
+        # Set unique diaries and traits
         thorin.diary = "Thorin's secret thought: I love beer."
+        thorin.traits = {"mood": "eager", "trust_in_party": "high", "primary_goal": "find relic", "risk_tolerance": "high", "recent_concern": "shadows"}
         aelindra.diary = "Aelindra's secret thought: Magic is cool."
+        aelindra.traits = {"mood": "curious", "trust_in_party": "neutral", "primary_goal": "study the sigils", "risk_tolerance": "low", "recent_concern": "ward stability"}
 
         # Verify path names
         thorin_path = get_player_diary_path(memory_path, thorin.name)
@@ -57,12 +59,18 @@ def test_diary_segregation():
 
         # Clear memory state of players in memory
         thorin.diary = ""
+        thorin.traits = {}
         aelindra.diary = ""
+        aelindra.traits = {}
 
         # Load and verify
         load_diaries(memory_path, party)
         assert thorin.diary == "Thorin's secret thought: I love beer."
+        assert thorin.traits["mood"] == "eager"
+        assert thorin.traits["risk_tolerance"] == "high"
         assert aelindra.diary == "Aelindra's secret thought: Magic is cool."
+        assert aelindra.traits["mood"] == "curious"
+        assert aelindra.traits["risk_tolerance"] == "low"
 
         # Init (delete) and verify deletion
         init_diaries(memory_path)

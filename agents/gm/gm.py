@@ -234,7 +234,9 @@ def run_turn(gm: GameMaster, party: list[Player], situation: str, on_event=None)
             for p in party:
                 reflect(p, narration, validated_facts)
                 if on_event:
-                    on_event('gm_agent', {'agent': f"{p.name}'s Diary", 'message': p.diary})
+                    traits_str = ", ".join(f"{k}: {v}" for k, v in p.traits.items()) if getattr(p, "traits", None) else ""
+                    diary_msg = f"{p.diary}\n\nTraits: {traits_str}" if traits_str else p.diary
+                    on_event('gm_agent', {'agent': f"{p.name}'s Diary", 'message': diary_msg})
             save_diaries(gm.memory_path, party)
             if on_event:
                 on_event('narration', {'message': narration})

@@ -26,6 +26,23 @@ from config import client, types, MODEL, send_chat_message
 APPROVE = "APPROVE"
 MODIFY = "MODIFY"
 
+# Fixed trait keys — always present, values evolve. Constant size per player.
+TRAIT_KEYS = [
+    "mood",
+    "trust_in_party",
+    "primary_goal",
+    "risk_tolerance",
+    "recent_concern",
+]
+
+DEFAULT_TRAITS = {
+    "mood": "neutral",
+    "trust_in_party": "neutral",
+    "primary_goal": "unknown",
+    "risk_tolerance": "moderate",
+    "recent_concern": "none",
+}
+
 
 def setup_agent(system_prompt: str):
     return client.chats.create(
@@ -43,19 +60,31 @@ def act(player: Player, situation: str) -> str:
     return response.text
 
 
+def _format_diary_block(player: Player) -> str:
+    """Build the private-diary + traits block injected into deliberation prompts."""
+    parts = []
+    if getattr(player, "diary", None):
+        parts.append(f"Your private thoughts:\n{player.diary}")
+    traits = getattr(player, "traits", None)
+    if traits:
+        trait_lines = "\n".join(f"  - {k}: {v}" for k, v in traits.items())
+        parts.append(f"Your character traits:\n{trait_lines}")
+    return "\n\n".join(parts) + "\n\n" if parts else ""
+
+
 def propose(player: Player, gm_message: str, validated_facts: str) -> str:
     """Independent first draft from a single player.
 
     The player sees ONLY the GM message and the validated memory; they do
     not yet know what their party members will propose.
     """
-    diary_str = f"Your private diary and secret thoughts:\n{player.diary}\n\n" if getattr(player, "diary", None) else ""
+    diary_block = _format_diary_block(player)
     context = (
         "The Game Master says:\n"
         f"{gm_message}\n\n"
         "Validated facts about the world (your shared memory, read-only):\n"
         f"{validated_facts}\n\n"
-        f"{diary_str}"
+        f"{diary_block}"
         f"Your status: {player.status()}\n\n"
         "Propose ONE concrete action you would take. "
         "Stay strictly consistent with the validated facts; only use items, "
@@ -78,7 +107,7 @@ def synthesize(
     open the discussion. The starter is allowed (and encouraged) to pick
     one player's idea, mix elements, or propose a small twist.
     """
-    diary_str = f"Your private diary and secret thoughts:\n{player.diary}\n\n" if getattr(player, "diary", None) else ""
+    diary_block = _format_diary_block(player)
     context = (
         "The Game Master says:\n"
         f"{gm_message}\n\n"
@@ -86,7 +115,7 @@ def synthesize(
         f"{validated_facts}\n\n"
         "Your party's individual proposals:\n"
         f"{proposals_block}\n\n"
-        f"{diary_str}"
+        f"{diary_block}"
         "You have been picked to OPEN the party discussion. "
         "Pick the best idea, combine elements, or propose a small twist "
         "that helps the group. Output ONE single proposal in the first "
@@ -108,13 +137,13 @@ def review(
     :data:`APPROVE` or :data:`MODIFY`. When the verdict is APPROVE, the
     second element is the empty string.
     """
-    diary_str = f"Your private diary and secret thoughts:\n{player.diary}\n\n" if getattr(player, "diary", None) else ""
+    diary_block = _format_diary_block(player)
     context = (
         "The Game Master says:\n"
         f"{gm_message}\n\n"
         "Validated facts about the world (read-only):\n"
         f"{validated_facts}\n\n"
-        f"{diary_str}"
+        f"{diary_block}"
         f"Your status: {player.status()}\n\n"
         "The current group proposal is:\n"
         f"{current_proposal}\n\n"
@@ -134,33 +163,90 @@ def review(
 
 
 def reflect(player: Player, latest_situation: str, validated_facts: str) -> None:
-    """Update the player's private thoughts based on the latest event.
+    """Update the player's private thoughts AND character traits.
 
-    This keeps their personal diary constant in size by rewriting/consolidating it.
+    Thoughts are rewritten each round (constant size). Traits are a fixed
+    set of keys whose values evolve — the dict never grows, guaranteeing
+    O(1) token cost regardless of how many rounds have passed.
     The character sheet is preserved separately and never overwritten.
     """
     current_thoughts = player.diary if getattr(player, "diary", None) else "Nenhum pensamento anterior."
+    current_traits = getattr(player, "traits", None) or DEFAULT_TRAITS.copy()
+    traits_block = "\n".join(f"  {k}: {v}" for k, v in current_traits.items())
     sheet = getattr(player, "character_sheet", "") or ""
     sheet_block = f"Your character sheet:\n{sheet}\n\n" if sheet else ""
+
     context = (
-        "You are playing as the character described in your system prompt. "
-        "Update your private diary (personal thoughts) based on the latest event.\n\n"
+        f"You are {player.name}, a {player.race} {player.dnd_class.name}. "
+        f"Personality: {player.personality}.\n\n"
         f"{sheet_block}"
-        "Your previous thoughts:\n"
+        "Your previous private thoughts:\n"
         f"{current_thoughts}\n\n"
+        "Your current character traits:\n"
+        f"{traits_block}\n\n"
         "Latest event in the world:\n"
         f"{latest_situation}\n\n"
         "Validated world facts:\n"
         f"{validated_facts}\n\n"
-        "Rewrite your private thoughts. Consolidate them into exactly 1 to 3 very short, "
-        "terse bullet points (in first person, keeping the same language as the context). "
-        "Focus on your immediate worries, plans, or how you feel about your companion(s) "
-        "according to your personality. "
-        "Keep it extremely concise. Output bullet points only, no commentary, markdown or headers."
+        "Update BOTH your private thoughts AND your character traits. "
+        "Reply STRICTLY in this format:\n\n"
+        "THOUGHTS:\n"
+        "- <1 to 3 very short bullet points in first person, filtered through "
+        "YOUR specific personality. If you are impulsive, show frustration or "
+        "eagerness. If you are calculative, show analysis or caution.>\n\n"
+        "TRAITS:\n"
+        "mood: <your current emotional state — e.g. determined, frustrated, curious, anxious>\n"
+        "trust_in_party: <high / growing / neutral / wavering / low>\n"
+        "primary_goal: <what you personally want most right now>\n"
+        "risk_tolerance: <high / moderate / low>\n"
+        "recent_concern: <the one thing worrying you most right now>\n\n"
+        "Make the thoughts and traits reflect YOUR personality. "
+        "Two different characters with different personalities should produce "
+        "different outputs for the same event."
     )
     response = send_chat_message(player.chat, context, remember=False)
-    player.diary = response.text.strip()
+    raw = response.text.strip()
+    thoughts, traits = _parse_reflection(raw, player)
+    player.diary = thoughts
+    player.traits = traits
     print(f"  [{player.name}'s Secret Thoughts]:\n  {player.diary}")
+    print(f"  [{player.name}'s Traits]: {player.traits}")
+
+
+def _parse_reflection(raw: str, player: Player) -> tuple[str, dict]:
+    """Parse the LLM reflection output into (thoughts, traits).
+
+    Defensive: if parsing fails, keep previous values so nothing is lost.
+    """
+    thoughts = player.diary
+    traits = getattr(player, "traits", None) or DEFAULT_TRAITS.copy()
+
+    raw_upper = raw.upper()
+    thoughts_start = raw_upper.find("THOUGHTS:")
+    traits_start = raw_upper.find("TRAITS:")
+
+    if thoughts_start != -1:
+        end = traits_start if traits_start != -1 else len(raw)
+        chunk = raw[thoughts_start + len("THOUGHTS:"):end].strip()
+        if chunk:
+            thoughts = chunk
+
+    if traits_start != -1:
+        chunk = raw[traits_start + len("TRAITS:"):].strip()
+        new_traits = {}
+        for line in chunk.splitlines():
+            line = line.strip().lstrip("- ").strip()
+            if ":" in line:
+                key, _, value = line.partition(":")
+                key = key.strip().lower().replace(" ", "_")
+                value = value.strip()
+                if key in TRAIT_KEYS and value:
+                    new_traits[key] = value
+        # Only overwrite keys that were successfully parsed
+        for k, v in new_traits.items():
+            traits[k] = v
+
+    return thoughts, traits
 
 
 def _parse_review(text: str) -> tuple[str, str]:
@@ -233,16 +319,16 @@ def init_diaries(memory_path: str) -> None:
 
 
 def save_diaries(memory_path: str, party: list[Player]) -> None:
-    """Save the current private diaries of all party members to their individual disk files."""
+    """Save the current private diaries and traits of all party members to disk."""
     for p in party:
         diary_path = get_player_diary_path(memory_path, p.name)
-        data = {"diary": p.diary, "character_sheet": p.character_sheet}
+        data = {"diary": p.diary, "character_sheet": getattr(p, "character_sheet", ""), "traits": getattr(p, "traits", None) or {}}
         with open(diary_path, "w", encoding="utf-8") as f:
             json.dump(data, f, ensure_ascii=False, indent=2)
 
 
 def load_diaries(memory_path: str, party: list[Player]) -> None:
-    """Load the private diaries of all party members from their individual disk files."""
+    """Load the private diaries and traits of all party members from disk."""
     for p in party:
         diary_path = get_player_diary_path(memory_path, p.name)
         if not os.path.exists(diary_path):
@@ -254,6 +340,8 @@ def load_diaries(memory_path: str, party: list[Player]) -> None:
                 p.diary = data["diary"]
             if "character_sheet" in data:
                 p.character_sheet = data["character_sheet"]
+            if "traits" in data and data["traits"]:
+                p.traits = data["traits"]
         except (json.JSONDecodeError, KeyError, OSError):
             pass
 
@@ -276,6 +364,6 @@ def save_character_sheet_to_diary(memory_path: str, player: Player) -> None:
     )
     player.character_sheet = sheet
     diary_path = get_player_diary_path(memory_path, player.name)
-    data = {"diary": player.diary, "character_sheet": sheet}
+    data = {"diary": player.diary, "character_sheet": sheet, "traits": getattr(player, "traits", None) or {}}
     with open(diary_path, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=2)

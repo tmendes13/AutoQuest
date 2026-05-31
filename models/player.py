@@ -19,6 +19,7 @@ class Player:
     chat: object = field(init=False, default=None)
     diary: str = ""
     character_sheet: str = ""
+    traits: dict = field(default_factory=dict)
 
     def __post_init__(self):
         self.current_hp = self.max_hp
