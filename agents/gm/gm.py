@@ -158,12 +158,15 @@ def _ingest_with_arbitration(
     return is_valid, arbiter_text
 
 
-def run_turn(gm: GameMaster, party: list[Player], situation: str) -> str:
+def run_turn(gm: GameMaster, party: list[Player], situation: str, on_event=None) -> str:
     """Run one full GM turn for a party of one or more players.
 
     The party runs an internal deliberation (see :mod:`agents.party`) and
     produces a single joint response, which is then submitted to the
     Memory Keeper + Arbiter pipeline as usual.
+
+    If on_event is provided, it is called as on_event(event_type, data)
+    for UI integration (e.g. WebSocket emissions).
 
     Returns the narrator's new situation text - already in the memory file
     and validated - which the caller should pass back as the ``situation``
@@ -176,17 +179,33 @@ def run_turn(gm: GameMaster, party: list[Player], situation: str) -> str:
         print(
             f"\n>>> Party deliberation (attempt {attempt}/{MAX_RETRIES}) <<<"
         )
+        if on_event:
+            on_event('system', {'message': f'Party deliberation (attempt {attempt}/{MAX_RETRIES})...'})
         party_response, _log = deliberate(party, situation, gm.memory_path)
+
+        if on_event:
+            on_event('player_action', {
+                'name': 'Party',
+                'action': party_response,
+                'hp': party[0].current_hp if party else 0,
+                'max_hp': party[0].max_hp if party else 100,
+            })
 
         is_valid, arbiter_text = _ingest_with_arbitration(
             gm, author=PARTY_AUTHOR, raw_text=party_response
         )
+        if on_event:
+            on_event('gm_agent', {'agent': 'Arbiter Decision', 'message': arbiter_text})
         if is_valid:
             print(f"[Arbiter] Party action accepted. {arbiter_text.strip()}")
             break
         print(f"[Arbiter] Party action REJECTED. {arbiter_text.strip()}")
+        if on_event:
+            on_event('system', {'message': f'Party action rejected by Arbiter: {arbiter_text.strip()}'})
     else:
-        # Retries exhausted: stop the game, the party keeps hallucinating.
+        if on_event:
+            on_event('system', {'message': 'Party exhausted deliberation retries due to hallucinations.'})
+            on_event('game_over', {'message': 'Campaign Aborted.'})
         raise GMRetriesExhaustedError(
             actor=PARTY_AUTHOR,
             last_text=party_response,
@@ -197,23 +216,36 @@ def run_turn(gm: GameMaster, party: list[Player], situation: str) -> str:
     narration = ""
     arbiter_text = ""
     for attempt in range(1, MAX_RETRIES + 1):
+        if on_event:
+            on_event('phase', {'phase': 'narrator', 'message': f'Narrator is crafting the story (attempt {attempt}/{MAX_RETRIES})...'})
         narration = narrate(gm.narrator_chat, gm.memory_path)
         print(f"\nNarrator (attempt {attempt}): {narration}\n")
 
         is_valid, arbiter_text = _ingest_with_arbitration(
             gm, author="narrator", raw_text=narration
         )
+        if on_event:
+            on_event('gm_agent', {'agent': 'Arbiter Decision', 'message': arbiter_text})
         if is_valid:
             print(f"[Arbiter] Narration accepted. {arbiter_text.strip()}")
-            # Run reflections for players before returning
+            if on_event:
+                on_event('phase', {'phase': 'players', 'message': 'Players are reflecting privately...'})
             validated_facts = memory_store.format_validated(gm.memory_path)
             for p in party:
                 reflect(p, narration, validated_facts)
+                if on_event:
+                    on_event('gm_agent', {'agent': f"{p.name}'s Diary", 'message': p.diary})
             save_diaries(gm.memory_path, party)
+            if on_event:
+                on_event('narration', {'message': narration})
             return narration
         print(f"[Arbiter] Narration REJECTED. {arbiter_text.strip()}")
+        if on_event:
+            on_event('system', {'message': f'Narrator description rejected by Arbiter: {arbiter_text.strip()}'})
 
-    # Retries exhausted: stop the game, the narrator keeps hallucinating.
+    if on_event:
+        on_event('system', {'message': 'Narrator exhausted narration retries due to hallucinations.'})
+        on_event('game_over', {'message': 'Campaign Aborted.'})
     raise GMRetriesExhaustedError(
         actor="narrator",
         last_text=narration,

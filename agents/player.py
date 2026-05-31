@@ -137,11 +137,15 @@ def reflect(player: Player, latest_situation: str, validated_facts: str) -> None
     """Update the player's private thoughts based on the latest event.
 
     This keeps their personal diary constant in size by rewriting/consolidating it.
+    The character sheet is preserved separately and never overwritten.
     """
     current_thoughts = player.diary if getattr(player, "diary", None) else "Nenhum pensamento anterior."
+    sheet = getattr(player, "character_sheet", "") or ""
+    sheet_block = f"Your character sheet:\n{sheet}\n\n" if sheet else ""
     context = (
         "You are playing as the character described in your system prompt. "
         "Update your private diary (personal thoughts) based on the latest event.\n\n"
+        f"{sheet_block}"
         "Your previous thoughts:\n"
         f"{current_thoughts}\n\n"
         "Latest event in the world:\n"
@@ -232,7 +236,7 @@ def save_diaries(memory_path: str, party: list[Player]) -> None:
     """Save the current private diaries of all party members to their individual disk files."""
     for p in party:
         diary_path = get_player_diary_path(memory_path, p.name)
-        data = {"diary": p.diary}
+        data = {"diary": p.diary, "character_sheet": p.character_sheet}
         with open(diary_path, "w", encoding="utf-8") as f:
             json.dump(data, f, ensure_ascii=False, indent=2)
 
@@ -248,5 +252,30 @@ def load_diaries(memory_path: str, party: list[Player]) -> None:
                 data = json.load(f)
             if "diary" in data:
                 p.diary = data["diary"]
+            if "character_sheet" in data:
+                p.character_sheet = data["character_sheet"]
         except (json.JSONDecodeError, KeyError, OSError):
             pass
+
+
+def save_character_sheet_to_diary(memory_path: str, player: Player) -> None:
+    """Save the player's character sheet as their permanent private diary entry.
+
+    Called after Session 0 approval to persist race, class, attributes,
+    personality, and HP as the character's immutable reference.
+    """
+    attrs_str = ", ".join(f"{k}:{v}" for k, v in player.attributes.items()) if player.attributes else "None"
+    sheet = (
+        f"CHARACTER SHEET\n"
+        f"Name: {player.name}\n"
+        f"Race: {player.race}\n"
+        f"Class: {player.dnd_class.name}\n"
+        f"Attributes: {attrs_str}\n"
+        f"HP: {player.current_hp}/{player.max_hp}\n"
+        f"Personality: {player.personality}\n"
+    )
+    player.character_sheet = sheet
+    diary_path = get_player_diary_path(memory_path, player.name)
+    data = {"diary": player.diary, "character_sheet": sheet}
+    with open(diary_path, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)

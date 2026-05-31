@@ -464,6 +464,41 @@
             opacity: 0.6;
         }
 
+        .player-count-input {
+            margin-top: 1.2rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .player-count-input label {
+            font-family: 'Cinzel', serif;
+            font-size: 0.85rem;
+            color: var(--accent-gold);
+            letter-spacing: 1px;
+        }
+
+        .player-count-input input {
+            font-family: 'Cinzel', serif;
+            font-size: 1.2rem;
+            font-weight: 700;
+            background: var(--bg-card);
+            color: var(--accent-gold);
+            border: 1px solid var(--border-gold);
+            border-radius: 6px;
+            padding: 0.4rem 0.8rem;
+            width: 80px;
+            text-align: center;
+            outline: none;
+            transition: border-color 0.3s ease;
+        }
+
+        .player-count-input input:focus {
+            border-color: var(--accent-gold);
+            box-shadow: 0 0 10px rgba(212, 175, 55, 0.2);
+        }
+
         /* Game Over */
         .event-game-over {
             text-align: center;
@@ -533,7 +568,11 @@
                 <div class="welcome-screen" id="welcomeScreen">
                     <div class="dice-icon">&#9860;</div>
                     <h2>AutoQuest</h2>
-                    <p>Press <strong>Start Campaign</strong> to begin the adventure. Watch as AI agents roleplay through a D&D campaign in real-time.</p>
+                    <p>Choose how many players will join the adventure, then press <strong>Start Campaign</strong>.</p>
+                    <div class="player-count-input">
+                        <label for="numPlayers">Number of Players:</label>
+                        <input type="number" id="numPlayers" min="1" max="6" value="2">
+                    </div>
                 </div>
             </div>
         </div>
@@ -570,7 +609,8 @@
             document.getElementById('btnStart').disabled = true;
             document.getElementById('btnStart').textContent = 'Running...';
             document.getElementById('welcomeScreen').style.display = 'none';
-            socket.emit('start_game');
+            const numPlayers = parseInt(document.getElementById('numPlayers').value) || 2;
+            socket.emit('start_game', { num_players: numPlayers });
         }
 
         // Handle game events

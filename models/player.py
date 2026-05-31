@@ -12,12 +12,13 @@ class Player:
     personality: str
     max_hp: int 
     current_hp: int = 0
-    # armor class?
+    attributes: dict[str, int] = field(default_factory=dict)
     inventory: list[Item] = field(default_factory=list)
     weapon: Optional[Item] = None
     armor: Optional[Item] = None
     chat: object = field(init=False, default=None)
     diary: str = ""
+    character_sheet: str = ""
 
     def __post_init__(self):
         self.current_hp = self.max_hp
@@ -41,11 +42,12 @@ class Player:
         weapon = self.weapon.name if self.weapon else "None"
         armor  = self.armor.name if self.armor else "None"
         items = ", ".join(i.name for i in self.inventory) or "Empty"
+        attrs = ", ".join(f"{k}:{v}" for k, v in self.attributes.items()) if self.attributes else "None"
 
         return(
             f"{self.name} ({self.race} {self.dnd_class.name}) | "
             f"HP: {self.current_hp}/{self.max_hp} | "
-            #f"CA: {self.armor_class} | "
             f"Weapon: {weapon} | Armor: {armor} | "
+            f"Attributes: {attrs} | "
             f"Inventory: {items}"
         )

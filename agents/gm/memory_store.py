@@ -21,18 +21,33 @@ from typing import Optional
 
 
 def init_memory(path: str) -> None:
-    """Create or reset the memory file at the given path."""
+    """Create or reset the memory file at the given path.
+
+    Preserves any existing protected_player_data block across resets.
+    """
     import os
     parent = os.path.dirname(path)
     if parent:
         os.makedirs(parent, exist_ok=True)
+
+    existing_protected = None
+    if os.path.exists(path):
+        try:
+            with open(path, "r", encoding="utf-8") as f:
+                old_data = json.load(f)
+            existing_protected = old_data.get("protected_player_data", None)
+        except (json.JSONDecodeError, OSError):
+            pass
+
+    data = {
+        "entries": [],
+        "metadata": {"validated_since_condense": 0}
+    }
+    if existing_protected:
+        data["protected_player_data"] = existing_protected
+
     with open(path, "w", encoding="utf-8") as f:
-        json.dump(
-            {"entries": [], "metadata": {"validated_since_condense": 0}},
-            f,
-            ensure_ascii=False,
-            indent=2,
-        )
+        json.dump(data, f, ensure_ascii=False, indent=2)
 
     # Reset uncompressed file
     import os
@@ -183,7 +198,11 @@ def replace_validated_with_summary(
     summary: str,
     keep_recent: int,
 ) -> str | None:
-    """Condense old validated entries into one validated summary entry."""
+    """Condense old validated entries into one validated summary entry.
+
+    The protected_player_data block is NEVER touched by condensation.
+    Only entries below the protected block are condensed.
+    """
     data = _read(path)
     validated = [e for e in data["entries"] if e["validated"]]
     if len(validated) <= keep_recent:
@@ -222,10 +241,31 @@ def format_entries(entries: list[dict]) -> str:
 
 
 def format_validated(path: str) -> str:
-    """Pretty-print all validated entries (the trusted world state)."""
-    return format_entries(validated_entries(path))
+    """Pretty-print all validated entries (the trusted world state).
+
+    Protected player data is shown first, followed by game history.
+    """
+    data = _read(path)
+    protected = data.get("protected_player_data", "")
+    result = ""
+    if protected:
+        result = f"[SYSTEM_PROTECTED_PLAYER_DATA]\n{protected}\n[/SYSTEM_PROTECTED_PLAYER_DATA]\n\n--- HISTORICO DE JOGO (COMPRESSIVEL) ---\n"
+    result += format_entries(validated_entries(path))
+    return result
 
 
 def format_all(path: str) -> str:
     """Pretty-print every entry (validated and not)."""
-    return format_entries(read_memory(path))
+    data = _read(path)
+    protected = data.get("protected_player_data", "")
+    result = ""
+    if protected:
+        result = f"[SYSTEM_PROTECTED_PLAYER_DATA]\n{protected}\n[/SYSTEM_PROTECTED_PLAYER_DATA]\n\n--- HISTORICO DE JOGO (COMPRESSIVEL) ---\n"
+    result += format_entries(read_memory(path))
+    return result
+
+
+def get_protected_player_data(path: str) -> str:
+    """Return the protected player data block, or empty string."""
+    data = _read(path)
+    return data.get("protected_player_data", "")
