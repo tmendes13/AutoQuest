@@ -2,36 +2,21 @@ from dataclasses import dataclass, field
 from typing import Optional
 from models.item import Item
 from models.dnd_class import Class
+from models.creature import Creature
 
 
 @dataclass
-class Player:
-    name: str
-    race: str
-    dnd_class: Class
-    personality: str
-    max_hp: int 
-    current_hp: int = 0
-    # armor class?
+class Player(Creature):
+    race: str = ""
+    dnd_class: Optional[Class] = None
+    personality: str = ""
     inventory: list[Item] = field(default_factory=list)
-    weapon: Optional[Item] = None
     armor: Optional[Item] = None
     chat: object = field(init=False, default=None)
     diary: str = ""
 
     def __post_init__(self):
-        self.current_hp = self.max_hp
-
-    def is_alive(self):
-        return self.current_hp > 0
-
-    def heal(self, amount):
-        self.current_hp += amount
-        print(f"{self.name} has healed for {amount} HP. HP: {self.current_hp}/{self.max_hp}")
-
-    def take_damage(self, amount):
-        self.current_hp -= amount
-        print(f"{self.name} took {amount} damage. HP: {self.current_hp}/{self.max_hp}")
+        super().__post_init__()
 
     def add_item(self, item: Item):
         self.inventory.append(item)

@@ -17,7 +17,19 @@ SYSTEM_PROMPT = (
     "Be dramatic but concise (3 to 6 sentences). "
     "Stay strictly consistent with the validated facts: do NOT introduce "
     "items, characters, locations or events that contradict them. "
-    "End by leaving the scene open for the players' next action."
+    "End by leaving the scene open for the players' next action.\n\n"
+    "COMBAT: If enemies appear and combat starts, ADD this line AFTER your narration:\n"
+    "[COMBAT] Monster_Name | HP_amount | weapon_damage\n\n"
+    "Examples:\n"
+    "[COMBAT] Goblin | 12 | 1d6\n"
+    "[COMBAT] Orc Warrior | 28 | 1d8+2\n"
+    "[COMBAT] Dragon | 80 | 3d8+1\n\n"
+    "If multiple enemies: include one [COMBAT] line per enemy.\n"
+    "Use realistic HP for creature type (Goblin 5-15, Orc 15-40, Dragon 50+).\n"
+    "Use realistic weapon damage (d6 for small, d10 for medium, d12+ for large).\n\n"
+    "EARLY COMBAT: In the FIRST few turns (turns 1-3), introduce combat encounters. "
+    "Do NOT delay conflict - make it appear naturally but ENSURE combat happens early. "
+    "Include [COMBAT] lines so the party actually fights and rolls dice."
 )
 
 
@@ -35,8 +47,10 @@ def start_campaign(narrator_chat) -> str:
     work from.
     """
     response = narrator_chat.send_message(
-        "Start the campaign. Describe the setting, the immediate threat or "
-        "mystery, and end by asking the players what they do."
+        "Start the campaign. Describe the setting and introduce an IMMEDIATE "
+        "combat threat or hostile encounter (bandits, monsters, enemies attacking). "
+        "The party should face danger RIGHT NOW, not later. "
+        "Include [COMBAT] lines with enemy stats. End by asking the players what they do."
     )
     return response.text.strip()
 
@@ -49,7 +63,8 @@ def narrate(narrator_chat, memory_path: str) -> str:
         "Here are the validated facts of the world (most recent at the bottom):\n"
         f"{validated}\n\n"
         "Narrate the result of the latest player action(s) and describe the "
-        "new situation. Stay consistent with the validated facts.",
+        "new situation. Stay consistent with the validated facts.\n\n"
+        "Remember: if a monster/enemy appears, include [COMBAT] lines with stats.",
         remember=False,
     )
     return response.text.strip()

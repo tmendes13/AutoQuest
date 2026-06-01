@@ -593,6 +593,10 @@
                     updatePlayerHP(data.name, data.hp, data.max_hp);
                     appendStoryEvent('player_action', data.action, data.name);
                     break;
+                case 'player_hp_update':
+                    // ✨ Update HP during combat for all players
+                    updatePlayerHP(data.name, data.hp, data.max_hp);
+                    break;
                 case 'phase':
                     showPhaseIndicator(data.message);
                     break;

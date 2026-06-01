@@ -29,6 +29,7 @@ Per-turn flow (after the campaign opening has already been emitted):
 """
 
 from dataclasses import dataclass
+from typing import Optional
 
 from agents.gm import memory_store
 from agents.gm.arbiter import setup_arbiter, arbitrate
@@ -39,8 +40,10 @@ from agents.gm.memory_keeper import (
     condense_memory,
 )
 from agents.gm.narrator import setup_narrator, start_campaign, narrate
+from agents.gm.simple_combat import extract_combat_enemies, process_round, status_line
 from agents.party import deliberate
 from models.player import Player
+from models.creature import Creature
 from agents.player import reflect, init_diaries, save_diaries
 
 
@@ -158,25 +161,35 @@ def _ingest_with_arbitration(
     return is_valid, arbiter_text
 
 
-def run_turn(gm: GameMaster, party: list[Player], situation: str) -> str:
+def run_turn(
+    gm: GameMaster,
+    party: list[Player],
+    situation: str,
+    active_enemies: Optional[list[Creature]] = None,
+) -> tuple[str, list[Creature]]:
     """Run one full GM turn for a party of one or more players.
 
     The party runs an internal deliberation (see :mod:`agents.party`) and
     produces a single joint response, which is then submitted to the
     Memory Keeper + Arbiter pipeline as usual.
+    
+    Automatically detects and processes combat if enemies are present or
+    appear in narration.
 
-    Returns the narrator's new situation text - already in the memory file
-    and validated - which the caller should pass back as the ``situation``
-    argument of the next turn.
+    Returns tuple of (narration_text, updated_active_enemies).
     """
+    if active_enemies is None:
+        active_enemies = []
+
     # ---- 1. Party deliberates (with retries on invalidation) ------------
     party_response = ""
     arbiter_text = ""
+    deliberation_log = None
     for attempt in range(1, MAX_RETRIES + 1):
         print(
             f"\n>>> Party deliberation (attempt {attempt}/{MAX_RETRIES}) <<<"
         )
-        party_response, _log = deliberate(party, situation, gm.memory_path)
+        party_response, deliberation_log = deliberate(party, situation, gm.memory_path)
 
         is_valid, arbiter_text = _ingest_with_arbitration(
             gm, author=PARTY_AUTHOR, raw_text=party_response
@@ -193,6 +206,20 @@ def run_turn(gm: GameMaster, party: list[Player], situation: str) -> str:
             last_reason=arbiter_text.strip(),
         )
 
+    # ---- 1.5 COMBAT: Process existing enemies ✨ ----
+    if active_enemies and deliberation_log:
+        print(f"\n>>> Processing combat ({len(active_enemies)} active enemies) <<<")
+        combat_log = process_round(party, active_enemies, deliberation_log.proposals)
+        if combat_log:
+            print(f"\n{combat_log}\n")
+            print(status_line(party, active_enemies))
+        
+        # Remove defeated enemies
+        active_enemies = [e for e in active_enemies if e.is_alive()]
+        
+        if not active_enemies:
+            print("\n🎉 All enemies defeated!\n")
+
     # ---- 2. Narrator narrates (with retries on invalidation) ------------
     narration = ""
     arbiter_text = ""
@@ -205,12 +232,24 @@ def run_turn(gm: GameMaster, party: list[Player], situation: str) -> str:
         )
         if is_valid:
             print(f"[Arbiter] Narration accepted. {arbiter_text.strip()}")
+            
+            # ---- 2.5 COMBAT: Extract new enemies from narration ✨ ----
+            new_enemies = extract_combat_enemies(narration)
+            if new_enemies:
+                print(f"\n🎯 Combat initiated! {len(new_enemies)} enemy/enemies appeared:")
+                for enemy in new_enemies:
+                    print(f"   {enemy.name}: {enemy.current_hp} HP, weapon {enemy.weapon}")
+                active_enemies.extend(new_enemies)
+            
             # Run reflections for players before returning
             validated_facts = memory_store.format_validated(gm.memory_path)
             for p in party:
                 reflect(p, narration, validated_facts)
             save_diaries(gm.memory_path, party)
-            return narration
+            
+            _maybe_condense_memory(gm)
+            
+            return narration, active_enemies
         print(f"[Arbiter] Narration REJECTED. {arbiter_text.strip()}")
 
     # Retries exhausted: stop the game, the narrator keeps hallucinating.

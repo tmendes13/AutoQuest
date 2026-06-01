@@ -24,7 +24,12 @@ def _player_system_prompt(p: Player) -> str:
         "those facts say you have. "
         "Be concise (1 to 3 short sentences per turn). "
         "Be collaborative: do not create artificial conflict, but do speak "
-        "up when you see a clearly better collective action."
+        "up when you see a clearly better collective action.\n\n"
+        "COMBAT: When enemies are present (the GM narrates monsters), you can "
+        "attack them! Actions like 'I attack the goblin with my sword' or "
+        "'I cast a fireball' will trigger combat. "
+        "Attacks roll 1d20 + your class bonus. Damage depends on your weapon. "
+        "You can also heal allies or defend. Stay in character!"
     )
 
 
@@ -57,11 +62,28 @@ def main():
     situation = begin_campaign(gm)
     print(f"\n[GM-Narrator opening] {situation}\n")
 
+    # ✨ Track active enemies across turns
+    active_enemies = []
+
     try:
         for round_idx in range(NUM_ROUNDS):
             print(f"\n=================== ROUND {round_idx + 1} ===================")
-            situation = run_turn(gm, party, situation)
+            
+            # ✨ Pass and receive active_enemies list
+            situation, active_enemies = run_turn(gm, party, situation, active_enemies)
+            
             print(f"\n[GM-Narrator] {situation}\n")
+            
+            # ✨ Show combat status if in battle
+            if active_enemies:
+                from agents.gm.simple_combat import status_line
+                print(status_line(party, active_enemies))
+            
+            # ✨ Check for total victory
+            if not active_enemies and round_idx > 0:
+                print("\n🏆 VICTORY! All threats defeated!\n")
+                break
+            
             print("----------- END OF TURN -----------")
     except GMRetriesExhaustedError as e:
         print("\n=================== CAMPAIGN ABORTED ===================")

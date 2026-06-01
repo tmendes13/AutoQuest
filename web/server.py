@@ -10,9 +10,11 @@ import time
 from agents.gm.narrator import setup_narrator, start_campaign, narrate
 from agents.gm.memory_keeper import setup_mem_keeper, mem_keep, condense_memory
 from agents.gm.arbiter import setup_arbiter, arbitrate
+from agents.gm.simple_combat import extract_combat_enemies, process_round, status_line
 from agents.player import setup_agent, act, reflect, init_diaries, save_diaries
 from models.player import Player
 from models.dnd_class import Class
+from models.creature import Creature
 from agents.gm import memory_store
 from agents.party import deliberate
 from main import _player_system_prompt
@@ -78,8 +80,18 @@ def run_game():
         memory_store.mark_validated(MEMORY_PATH, entry_id)
     emit_event('narration', {'message': situation})
 
+    # ✨ Track active enemies across turns
+    active_enemies = []
+
     # Game loop
     for round_num in range(5):
+        # ✨ Check if all players are dead (instant lose)
+        alive_players = [p for p in players if p.is_alive()]
+        if not alive_players:
+            emit_event('game_over', {'message': '💀 All party members have fallen! Campaign Over.'})
+            game_running = False
+            return
+        
         emit_event('round_start', {'round': round_num + 1})
         
         # ---- 1. Party deliberates (with retries on invalidation) ------------
@@ -156,6 +168,28 @@ def run_game():
             game_running = False
             return
             
+        # ---- 1.5 COMBAT: Process existing enemies ✨ ----
+        if active_enemies and log:
+            emit_event('phase', {'phase': 'combat', 'message': f'Processing combat ({len(active_enemies)} active enemies)...'})
+            combat_log = process_round(players, active_enemies, log.proposals)
+            if combat_log:
+                emit_event('gm_agent', {'agent': 'Combat Log', 'message': combat_log})
+                # ✨ Update HP for ALL players after combat round
+                for player in players:
+                    emit_event('player_hp_update', {
+                        'name': player.name,
+                        'hp': player.current_hp,
+                        'max_hp': player.max_hp,
+                        'alive': player.is_alive(),
+                    })
+                emit_event('combat_status', {'message': status_line(players, active_enemies)})
+            
+            # Remove defeated enemies
+            active_enemies = [e for e in active_enemies if e.is_alive()]
+            
+            if not active_enemies:
+                emit_event('system', {'message': '🎉 All enemies defeated!'})
+        
         # ---- 2. Narrator narrates (with retries on invalidation) ------------
         narration = ""
         is_valid_narr = False
@@ -197,6 +231,14 @@ def run_game():
             emit_event('game_over', {'message': 'Campaign Aborted.'})
             game_running = False
             return
+            
+        # ---- 2.5 COMBAT: Extract new enemies from narration ✨ ----
+        new_enemies = extract_combat_enemies(narration)
+        if new_enemies:
+            emit_event('system', {'message': f'🎯 Combat initiated! {len(new_enemies)} enemy/enemies appeared:'})
+            for enemy in new_enemies:
+                emit_event('system', {'message': f'   {enemy.name}: {enemy.current_hp} HP, weapon {enemy.weapon}'})
+            active_enemies.extend(new_enemies)
             
         # ---- 3. Players reflect privately on the validated turn ------------
         emit_event('phase', {'phase': 'players', 'message': 'Players are reflecting privately...'})
