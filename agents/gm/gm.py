@@ -158,7 +158,7 @@ def _ingest_with_arbitration(
     return is_valid, arbiter_text
 
 
-def run_turn(gm: GameMaster, party: list[Player], situation: str, on_event=None) -> str:
+def run_turn(gm: GameMaster, party: list[Player], situation: str, on_event=None, turn_num: int = 0) -> str:
     """Run one full GM turn for a party of one or more players.
 
     The party runs an internal deliberation (see :mod:`agents.party`) and
@@ -172,6 +172,10 @@ def run_turn(gm: GameMaster, party: list[Player], situation: str, on_event=None)
     and validated - which the caller should pass back as the ``situation``
     argument of the next turn.
     """
+    if turn_num > 0:
+        from metrics import get_metrics
+        get_metrics().start_turn(turn_num)
+    
     # ---- 1. Party deliberates (with retries on invalidation) ------------
     party_response = ""
     arbiter_text = ""
@@ -182,6 +186,13 @@ def run_turn(gm: GameMaster, party: list[Player], situation: str, on_event=None)
         if on_event:
             on_event('system', {'message': f'Party deliberation (attempt {attempt}/{MAX_RETRIES})...'})
         party_response, _log = deliberate(party, situation, gm.memory_path)
+        
+        # Record MODIFY rounds for metrics
+        if turn_num > 0:
+            modify_count = sum(1 for h in _log.history if "[modify by" in h)
+            from metrics import get_metrics
+            for _ in range(modify_count):
+                get_metrics().record_modify()
 
         if on_event:
             on_event('player_action', {
@@ -196,6 +207,9 @@ def run_turn(gm: GameMaster, party: list[Player], situation: str, on_event=None)
         )
         if on_event:
             on_event('gm_agent', {'agent': 'Arbiter Decision', 'message': arbiter_text})
+        if not is_valid and turn_num > 0:
+            from metrics import get_metrics
+            get_metrics().record_arbiter_invalid()
         if is_valid:
             print(f"[Arbiter] Party action accepted. {arbiter_text.strip()}")
             break
@@ -226,6 +240,9 @@ def run_turn(gm: GameMaster, party: list[Player], situation: str, on_event=None)
         )
         if on_event:
             on_event('gm_agent', {'agent': 'Arbiter Decision', 'message': arbiter_text})
+        if not is_valid and turn_num > 0:
+            from metrics import get_metrics
+            get_metrics().record_arbiter_invalid()
         if is_valid:
             print(f"[Arbiter] Narration accepted. {arbiter_text.strip()}")
             if on_event:
@@ -240,6 +257,9 @@ def run_turn(gm: GameMaster, party: list[Player], situation: str, on_event=None)
             save_diaries(gm.memory_path, party)
             if on_event:
                 on_event('narration', {'message': narration})
+            if turn_num > 0:
+                from metrics import get_metrics
+                get_metrics().end_turn()
             return narration
         print(f"[Arbiter] Narration REJECTED. {arbiter_text.strip()}")
         if on_event:

@@ -10,7 +10,7 @@ from models.player import Player
 from models.dnd_class import Class
 
 
-NUM_ROUNDS = 20
+NUM_ROUNDS = 10
 
 
 def _player_system_prompt(p: Player) -> str:
@@ -82,7 +82,7 @@ def main():
     try:
         for round_idx in range(NUM_ROUNDS):
             print(f"\n=================== ROUND {round_idx + 1} ===================")
-            situation = run_turn(gm, party, situation)
+            situation = run_turn(gm, party, situation, turn_num=round_idx + 1)
             print(f"\n[GM-Narrator] {situation}\n")
             print("----------- END OF TURN -----------")
     except GMRetriesExhaustedError as e:
@@ -91,6 +91,9 @@ def main():
         print(f"[GM] Offending actor : {e.actor}")
         print(f"[GM] Last text       : {e.last_text}")
         print(f"[GM] Arbiter reason  : {e.last_reason}")
+    finally:
+        from metrics import get_metrics
+        get_metrics().save()
 
 
 if __name__ == "__main__":

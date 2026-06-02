@@ -81,10 +81,13 @@ def run_game(num_players):
     try:
         for round_num in range(NUM_ROUNDS):
             emit_event('round_start', {'round': round_num + 1})
-            situation = run_turn(gm, players, situation, on_event=emit_event)
+            situation = run_turn(gm, players, situation, on_event=emit_event, turn_num=round_num + 1)
             emit_event('round_end', {'round': round_num + 1})
     except GMRetriesExhaustedError as e:
         emit_event('game_over', {'message': 'Campaign Aborted.'})
+    finally:
+        from metrics import get_metrics
+        get_metrics().save()
         game_running = False
         return
 
