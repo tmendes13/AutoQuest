@@ -100,10 +100,10 @@ if 'm_with' in locals() and 'm_without' in locals():
     print("COMPARISON")
     print("="*60)
     llm_diff = ((m_without['avg_llm_calls_per_turn'] - m_with['avg_llm_calls_per_turn']) / m_with['avg_llm_calls_per_turn'] * 100) if m_with['avg_llm_calls_per_turn'] > 0 else 0
-    invalid_diff = ((m_without['avg_arbiter_invalid_rate'] - m_with['avg_arbiter_invalid_rate']) / m_with['avg_arbiter_invalid_rate'] * 100) if m_with['avg_arbiter_invalid_rate'] > 0 else 0
+    hall_diff = ((m_without['avg_hallucinations_per_turn'] - m_with['avg_hallucinations_per_turn']) / m_with['avg_hallucinations_per_turn'] * 100) if m_with['avg_hallucinations_per_turn'] > 0 else 0
     modify_diff = ((m_without['avg_modify_rounds_per_turn'] - m_with['avg_modify_rounds_per_turn']) / m_with['avg_modify_rounds_per_turn'] * 100) if m_with['avg_modify_rounds_per_turn'] > 0 else 0
     
-    print(f"Avg LLM calls:        {m_with['avg_llm_calls_per_turn']:.1f} → {m_without['avg_llm_calls_per_turn']:.1f} ({llm_diff:+.0f}%)")
-    print(f"Arbiter INVALID rate: {m_with['avg_arbiter_invalid_rate']:.1%} → {m_without['avg_arbiter_invalid_rate']:.1%} ({invalid_diff:+.0f}%)")
-    print(f"Avg MODIFY rounds:    {m_with['avg_modify_rounds_per_turn']:.1f} → {m_without['avg_modify_rounds_per_turn']:.1f} ({modify_diff:+.0f}%)")
+    print(f"Avg LLM calls:          {m_with['avg_llm_calls_per_turn']:.1f} → {m_without['avg_llm_calls_per_turn']:.1f} ({llm_diff:+.0f}%)")
+    print(f"Avg hallucinations:     {m_with['avg_hallucinations_per_turn']:.1f} → {m_without['avg_hallucinations_per_turn']:.1f} ({hall_diff:+.0f}%)")
+    print(f"Avg MODIFY rounds:      {m_with['avg_modify_rounds_per_turn']:.1f} → {m_without['avg_modify_rounds_per_turn']:.1f} ({modify_diff:+.0f}%)")
     print("="*60)
