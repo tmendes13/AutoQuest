@@ -26,9 +26,6 @@ from config import client, types, MODEL, send_chat_message
 APPROVE = "APPROVE"
 MODIFY = "MODIFY"
 
-# Global flag to disable diaries
-USE_DIARIES = True
-
 # Fixed trait keys — always present, values evolve. Constant size per player.
 TRAIT_KEYS = [
     "mood",
@@ -66,7 +63,7 @@ def act(player: Player, situation: str) -> str:
 def _format_diary_block(player: Player) -> str:
     """Build the private-diary + traits block injected into deliberation prompts."""
     parts = []
-    if USE_DIARIES and getattr(player, "diary", None):
+    if getattr(player, "diary", None):
         parts.append(f"Your private thoughts:\n{player.diary}")
     traits = getattr(player, "traits", None)
     if traits:
