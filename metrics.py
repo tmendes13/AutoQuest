@@ -9,11 +9,9 @@ class Metrics:
         self.arbiter_invalids_per_turn = []
         self.modify_rounds_per_turn = []
         self.llm_calls_per_turn = []
-        self.hallucinations_per_turn = []
         self.current_turn = 0
         self.current_turn_invalids = 0
         self.current_turn_modifies = 0
-        self.current_turn_hallucinations = 0
         self.last_llm_call_count = 0
     
     def start_turn(self, turn_num):
@@ -21,7 +19,6 @@ class Metrics:
         self.current_turn = turn_num
         self.current_turn_invalids = 0
         self.current_turn_modifies = 0
-        self.current_turn_hallucinations = 0
         
         # Snapshot current LLM call count
         import config
@@ -41,15 +38,10 @@ class Metrics:
         """Record a MODIFY round in deliberation."""
         self.current_turn_modifies += 1
     
-    def record_hallucination(self):
-        """Record a hallucination detected (arbiter rejection requiring retry)."""
-        self.current_turn_hallucinations += 1
-    
     def end_turn(self):
         """End turn and save metrics."""
         self.arbiter_invalids_per_turn.append(self.current_turn_invalids)
         self.modify_rounds_per_turn.append(self.current_turn_modifies)
-        self.hallucinations_per_turn.append(self.current_turn_hallucinations)
         
         # Get LLM calls delta this turn from config
         import config
@@ -67,20 +59,20 @@ class Metrics:
     
     def save(self):
         """Save summary to file."""
-        turns_count = len(self.hallucinations_per_turn)
+        turns_count = len(self.arbiter_invalids_per_turn)
         if turns_count == 0:
             return
         
         summary = {
             "turns": turns_count,
-            "avg_llm_calls_per_turn": sum(self.llm_calls_per_turn) / turns_count if self.llm_calls_per_turn else 0,
-            "avg_hallucinations_per_turn": sum(self.hallucinations_per_turn) / turns_count,
+            "avg_llm_calls_per_turn": sum(self.llm_calls_per_turn) / turns_count,
+            "avg_arbiter_invalid_rate": sum(self.arbiter_invalids_per_turn) / (turns_count * 2) if turns_count > 0 else 0,  # 2 checks per turn (party + narrator)
             "avg_modify_rounds_per_turn": sum(self.modify_rounds_per_turn) / turns_count,
             "per_turn": [
                 {
                     "turn": i+1,
                     "llm_calls": self.llm_calls_per_turn[i] if i < len(self.llm_calls_per_turn) else 0,
-                    "hallucinations": self.hallucinations_per_turn[i],
+                    "arbiter_invalids": self.arbiter_invalids_per_turn[i],
                     "modify_rounds": self.modify_rounds_per_turn[i],
                 }
                 for i in range(turns_count)
@@ -96,7 +88,7 @@ class Metrics:
         print("="*60)
         print(f"Turns completed: {turns_count}")
         print(f"Avg LLM calls per turn: {summary['avg_llm_calls_per_turn']:.1f}")
-        print(f"Avg hallucinations per turn: {summary['avg_hallucinations_per_turn']:.1f}")
+        print(f"Avg Arbiter INVALID rate: {summary['avg_arbiter_invalid_rate']:.1%}")
         print(f"Avg MODIFY rounds per turn: {summary['avg_modify_rounds_per_turn']:.1f}")
         print("="*60 + "\n")
 

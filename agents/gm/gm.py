@@ -209,7 +209,7 @@ def run_turn(gm: GameMaster, party: list[Player], situation: str, on_event=None,
             on_event('gm_agent', {'agent': 'Arbiter Decision', 'message': arbiter_text})
         if not is_valid and turn_num > 0:
             from metrics import get_metrics
-            get_metrics().record_hallucination()
+            get_metrics().record_arbiter_invalid()
         if is_valid:
             print(f"[Arbiter] Party action accepted. {arbiter_text.strip()}")
             break
@@ -242,7 +242,7 @@ def run_turn(gm: GameMaster, party: list[Player], situation: str, on_event=None,
             on_event('gm_agent', {'agent': 'Arbiter Decision', 'message': arbiter_text})
         if not is_valid and turn_num > 0:
             from metrics import get_metrics
-            get_metrics().record_hallucination()
+            get_metrics().record_arbiter_invalid()
         if is_valid:
             print(f"[Arbiter] Narration accepted. {arbiter_text.strip()}")
             if on_event:
